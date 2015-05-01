@@ -37,65 +37,57 @@ NULL
 
 #' @export
 #' @rdname alias
-alias_get <- function(index=NULL, alias=NULL, ignore_unavailable=FALSE, ...)
-{
+alias_get <- function(index=NULL, alias=NULL, ignore_unavailable=FALSE, ...) {
   alias_GET(index, alias, ignore_unavailable, ...)
 }
 
 #' @export
 #' @rdname alias
-aliases_get <- function(index=NULL, alias=NULL, ignore_unavailable=FALSE, ...)
-{
+aliases_get <- function(index=NULL, alias=NULL, ignore_unavailable=FALSE, ...) {
   alias_GET(index, alias, ignore_unavailable, ...)
 }
 
 #' @export
 #' @rdname alias
-alias_exists <- function(index=NULL, alias=NULL, ...)
-{
-  res <- alias_HEAD(index, alias, ...)
-  if(res$status_code == 200) TRUE else FALSE
+alias_exists <- function(index=NULL, alias=NULL, ...) {
+  res <- HEAD(alias_url(index, alias), ...)
+  if (res$status_code == 200) TRUE else FALSE
 }
 
 #' @export
 #' @rdname alias
-alias_create <- function(index=NULL, alias, routing=NULL, filter=NULL, ...)
-{
-  out <- PUT(alias_url(index, alias), ...)
+alias_create <- function(index=NULL, alias, routing=NULL, filter=NULL, ...) {
+  out <- PUT(alias_url(index, alias), c(make_up(), ...))
   stop_for_status(out)
   jsonlite::fromJSON(content(out, "text"), FALSE)
 }
 
 #' @export
 #' @rdname alias
-alias_delete <- function(index=NULL, alias, ...)
-{
-  out <- DELETE(alias_url(index, alias), ...)
+alias_delete <- function(index=NULL, alias, ...) {
+  out <- DELETE(alias_url(index, alias), c(make_up(), ...))
   stop_for_status(out)
   jsonlite::fromJSON(content(out, "text"), FALSE)
 }
 
-alias_GET <- function(index, alias, ignore, ...)
-{
-  tt <- GET(alias_url(index, alias), query=ec(list(ignore_unavailable=as_log(ignore))), ...)
-  if(tt$status_code > 202) geterror(tt)
+alias_GET <- function(index, alias, ignore, ...) {
+  checkconn()
+  tt <- GET( alias_url(index, alias), query = ec(list(ignore_unavailable = as_log(ignore))), make_up(), ...)
+  if (tt$status_code > 202) geterror(tt)
   jsonlite::fromJSON(content(tt, as = "text"), FALSE)
 }
 
-alias_HEAD <- function(index, alias, ...) HEAD(alias_url(index, alias), ...)
-
-alias_url <- function(index, alias)
-{
-  conn <- connect()
-  if(!is.null(index)){
-    if(!is.null(alias))
-      sprintf("%s:%s/%s/_alias/%s", conn$base, conn$port, cl(index), alias)
+alias_url <- function(index, alias) {
+  url <- make_url(es_get_auth())
+  if (!is.null(index)) {
+    if (!is.null(alias))
+      sprintf("%s/%s/_alias/%s", url, cl(index), alias)
     else
-      sprintf("%s:%s/%s/_alias", conn$base, conn$port, cl(index))
+      sprintf("%s/%s/_alias", url, cl(index))
   } else {
-    if(!is.null(alias))
-      sprintf("%s:%s/_alias/%s", conn$base, conn$port, alias)
+    if (!is.null(alias))
+      sprintf("%s/_alias/%s", url, alias)
     else
-      sprintf("%s:%s/_alias", conn$base, conn$port)
+      sprintf("%s/_alias", url)
   }
 }

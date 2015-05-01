@@ -1,11 +1,33 @@
 #' Use the bulk API to create, index, update, or delete documents.
 #'
 #' @export
-#' @param filename Path to a file to load in the bulk API
+#' @param x A data.frame or path to a file to load in the bulk API
+#' @param index (character) The index name to use. Required for data.frame input, but 
+#' optional for file inputs.
+#' @param type (character) The type name to use. If left as NULL, will be same name as index.
+#' @param chunk_size (integer) Size of each chunk. If your data.frame is smaller 
+#' thank \code{chunk_size}, this parameter is essentially ignored. We write in chunks because
+#' at some point, depending on size of each document, and Elasticsearch setup, writing a very
+#' large number of documents in one go becomes slow, so chunking can help. This parameter
+#' is ignored if you pass a file name. Default: 1000
 #' @param raw (logical) Get raw JSON back or not.
-#' @param ... Pass on curl options to the \code{\link[httr]{POST}} call.
+#' @param ... Pass on curl options to \code{\link[httr]{POST}}
 #' @details More on the Bulk API:
-#'    \url{http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/bulk.html}.
+#' \url{http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/bulk.html}.
+#' 
+#' This function dispatches on data.frame or character input. Character input has 
+#' to be a file name or the function stops with an error message. 
+#' 
+#' If you pass a data.frame to this function, we by default to an index operation, 
+#' that is, create the record in the index and type given by those parameters to the
+#' function. Down the road perhaps we will try to support other operations on the 
+#' bulk API. if you pass a file, of course in that file, you can specify any 
+#' operations you want. 
+#' 
+#' Row names are dropped from data.frame, and top level names for a list are dropped
+#' as well.
+#' 
+#' A progress bar gives the progress for data.frames and lists
 #' @examples \dontrun{
 #' plosdat <- system.file("examples", "plos_data.json", package = "elastic")
 #' docs_bulk(plosdat)
@@ -17,20 +39,93 @@
 #' library("httr")
 #' plosdat <- system.file("examples", "plos_data.json", package = "elastic")
 #' docs_bulk(plosdat, config=verbose())
+#' 
+#' # From a data.frame
+#' docs_bulk(mtcars, index = "hello", type = "world")
+#' docs_bulk(iris, "iris", "flowers")
+#' ## type can be missing, but index can not
+#' docs_bulk(iris, "flowers")
+#' ## big data.frame, 53K rows, load ggplot2 package first
+#' res <- docs_bulk(diamonds, "diam")
+#' Search("diam")$hits$total
+#' 
+#' # From a list
+#' docs_bulk(apply(iris, 1, as.list), index="iris", type="flowers")
+#' docs_bulk(apply(USArrests, 1, as.list), index="arrests")
+#' dim_list <- apply(diamonds, 1, as.list)
+#' out <- docs_bulk(dim_list, index="diamfromlist")
 #' }
+docs_bulk <- function(x, index = NULL, type = NULL, chunk_size = 1000, raw=FALSE, ...) {
+  UseMethod("docs_bulk")
+}
 
-docs_bulk <- function(filename, raw=FALSE, ...)
-{
+#' @export
+docs_bulk.data.frame <- function(x, index = NULL, type = NULL, chunk_size = 1000, raw = FALSE, ...) {
+  checkconn()
+  if (is.null(index)) {
+    stop("index can't be NULL when passing a data.frame")
+  }
+  if (is.null(type)) type <- index
+  row.names(x) <- NULL
+  rws <- seq_len(NROW(x))
+  chks <- split(rws, ceiling(seq_along(rws) / chunk_size))
+  pb <- txtProgressBar(min = 0, max = length(chks), initial = 0, style = 3)
+  on.exit(close(pb))
+  for (i in seq_along(chks)) {
+    setTxtProgressBar(pb, i)
+    docs_bulk(make_bulk(x[chks[[i]], ], index, type, chks[[i]]), ...)
+  }
+}
+
+#' @export
+docs_bulk.list <- function(x, index = NULL, type = NULL, chunk_size = 1000, raw = FALSE, ...) {
+  checkconn()
+  if (is.null(index)) {
+    stop("index can't be NULL when passing a list")
+  }
+  if (is.null(type)) type <- index
+  x <- unname(x)
+  rws <- seq_len(length(x))
+  chks <- split(rws, ceiling(seq_along(rws) / chunk_size))
+  pb <- txtProgressBar(min = 0, max = length(chks), initial = 0, style = 3)
+  for (i in seq_along(chks)) {
+    setTxtProgressBar(pb, i)
+    docs_bulk(make_bulk(x[chks[[i]]], index, type, chks[[i]]), ...)
+  }
+}
+
+#' @export
+docs_bulk.character <- function(x, index = NULL, type = NULL, chunk_size = 1000, raw=FALSE, ...) {
+  on.exit(close_conns())
+  checkconn()
+  stopifnot(file.exists(x))
   conn <- es_get_auth()
   url <- paste0(conn$base, ":", conn$port, '/_bulk')
-  tt <- POST(url, body=upload_file(filename), ..., encode = "json")
-  if(tt$status_code > 202){
-    if(tt$status_code > 202) stop(content(tt)$error)
-    if(content(tt)$status == "ERROR" | content(tt)$status == 500) stop(content(tt)$error_message)
+  tt <- POST(url, make_up(), ..., body = upload_file(x, type = "application/json"), encode = "json")
+  if (tt$status_code > 202) {
+    if (tt$status_code > 202) stop(content(tt)$error)
+    if (content(tt)$status == "ERROR" | content(tt)$status == 500) stop(content(tt)$error_message)
   }
   res <- content(tt, as = "text")
-  res <- structure(res, class="bulk_make")
-  if(raw) res else es_parse(res)
+  res <- structure(res, class = "bulk_make")
+  if (raw) res else es_parse(res)
+}
+
+make_bulk <- function(df, index, type, counter) {
+  metadata_fmt <- '{"index":{"_index":"%s","_type":"%s","_id":%d}}'
+  metadata <- sprintf(metadata_fmt, index, type, counter - 1L)
+  data <- jsonlite::toJSON(df, collapse = FALSE)
+  tmpf <- tempfile("elastic__")
+  writeLines(paste(metadata, data, sep = "\n"), tmpf)
+  invisible(tmpf)
+}
+
+close_conns <- function() {
+  cons <- showConnections()
+  ours <- as.integer(rownames(cons)[grepl("/elastic__", cons[, "description"], fixed = TRUE)])
+  for (i in ours) {
+    close(getConnection(i))
+  } 
 }
 
 # make_bulk_plos(index_name='plosmore', fields=c('id','journal','title','abstract','author'), filename="inst/examples/plos_more_data.json")

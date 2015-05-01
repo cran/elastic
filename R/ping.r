@@ -5,8 +5,14 @@
 #' @examples \dontrun{
 #' ping()
 #' }
-ping <- function(...)
-{
-  conn <- connect()
-  es_GET_(paste(conn$base, ":", conn$port, sep=""), ...)
+ping <- function(...) { 
+  checkconn()
+  es_GET_(make_url(es_get_auth()), ...)
+}
+
+checkconn <- function(...) {
+  res <- tryCatch(HEAD(make_url(es_get_auth())), error = function(e) e)
+  if (is(res, "error")) {
+    stop("Check your connection, server may be down, url or port incorrect, or authentication wrong", call. = FALSE)
+  }
 }

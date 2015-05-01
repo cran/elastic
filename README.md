@@ -3,16 +3,24 @@ elastic
 
 
 
-[![Build Status](https://api.travis-ci.org/ropensci/elastic.png)](https://travis-ci.org/ropensci/elastic)
-[![Build status](https://ci.appveyor.com/api/projects/status/swmmw758mf1heoj2/branch/master)](https://ci.appveyor.com/project/sckott/elastic/branch/master)
+[![Build Status](https://api.travis-ci.org/ropensci/elastic.svg)](https://travis-ci.org/ropensci/elastic)
+[![Coverage Status](https://coveralls.io/repos/ropensci/elastic/badge.svg)](https://coveralls.io/r/ropensci/elastic)
+<!-- [![Build status](https://ci.appveyor.com/api/projects/status/swmmw758mf1heoj2/branch/master)](https://ci.appveyor.com/project/sckott/elastic/branch/master) -->
 
-**A general purpose R interface to [Elasticsearch](http://elasticsearch.org)**
+**A general purpose R interface to [Elasticsearch](https://www.elastic.co/products/elasticsearch)**
 
 ## Elasticsearch info
 
-* [Elasticsearch home page](http://elasticsearch.org)
-* [API docs](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index.html)
-* This client is being developed under `v1.4` of Elasticsearch.
+* [Elasticsearch home page](https://www.elastic.co/products/elasticsearch)
+* [API docs](http://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+* This client is being developed under `v1.5.2` of Elasticsearch, and will generally develop following whatever is the current version.
+
+## Security
+
+You're fine running ES locally on your machine, but be careful just throwing up ES on a server with a public IP address - make sure to think about security. 
+
+* [Shield](https://www.elastic.co/products/shield) - This is a paid product provided by Elastic - so probably only applicable to enterprise users
+* DIY security - there are a variety of techniques for securing your Elasticsearch. A number of resources are collected in a [blog post](http://recology.info/2015/02/secure-elasticsearch/) - tools include putting your ES behind something like Nginx, putting basic auth on top of it, using https, etc. 
 
 ## Quick start
 
@@ -33,15 +41,41 @@ library('elastic')
 
 * [Elasticsearch installation help](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/_installation.html)
 
+__w/ Docker__
+
+Pull the official elasticsearch image
+
+```
+docker pull elasticsearch
+```
+
+Then start up a container
+
+```
+docker run -d -p 9200:9200 elasticsearch
+```
+
+Then elasticsearch should be available on port 9200, try `curl localhost:9200` and you should get the familiar message indicating ES is on. 
+
+If you're using boot2docker, you'll need to use the IP address in place of localhost. Get it by doing `boot2docker ip`.
+
 __on OSX__
 
-+ Download zip or tar file from Elasticsearch [see here for download](http://www.elasticsearch.org/overview/elkdownloads/), e.g., `curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.1.tar.gz`
-+ Unzip it: `untar elasticsearch-1.4.1.tar.gz`
-+ Move it: `sudo mv /path/to/elasticsearch-1.4.1 /usr/local` (replace version with your version)
++ Download zip or tar file from Elasticsearch [see here for download](http://www.elasticsearch.org/overview/elkdownloads/), e.g., `curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.2.tar.gz`
++ Unzip it: `untar elasticsearch-1.5.2.tar.gz`
++ Move it: `sudo mv /path/to/elasticsearch-1.5.2 /usr/local` (replace version with your version)
 + Navigate to /usr/local: `cd /usr/local`
-+ Add shortcut: `sudo ln -s elasticsearch-1.4.1 elasticsearch` (replace version with your verioon)
++ Add shortcut: `sudo ln -s elasticsearch-1.5.2 elasticsearch` (replace version with your verioon)
 
 You can also install via Homebrew: `brew install elasticsearch`
+
+> Note: for the 1.5 upgrade of Elasticsearch, it wants you to have java 8 or greater. I downloaded Java 8 from here http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html and it seemed to work great.
+
+### Upgrading Elasticsearch
+
+I am not totally clear on best practice here, but from what I understand, when you upgrade to a new version of Elasticsearch, place old `elasticsearch/data` and `elasticsearch/config` directories into the new installation (`elasticsearch/` dir). The new elasticsearch instance with replaced data and config directories should automatically update data to the new version and start working. Maybe if you use homebrew on a Mac to upgrade it takes care of this for you - not sure.
+
+Obviously, upgrading Elasticsearch while keeping it running is a different thing ([some help here from Elastic](http://www.elastic.co/guide/en/elasticsearch/reference/current/setup-upgrade.html)).
 
 ### Start Elasticsearch
 
@@ -117,18 +151,17 @@ The function `connect()` is used before doing anything else to set the connectio
 
 
 ```r
-connect()
-#> uri:       http://127.0.0.1 
+connect(es_port = 9200)
+#> url:       http://127.0.0.1 
 #> port:      9200 
 #> username:  NULL 
 #> password:  NULL 
-#> api key:   NULL 
 #> elasticsearch details:   
-#>       status:                  200 
-#>       name:                    Taj Nital 
-#>       Elasticsearch version:   1.4.2 
-#>       ES version timestamp:    2014-12-16T14:11:12Z 
-#>       lucene version:          4.10.2
+#>    status:                  200 
+#>    name:                    Jean DeWolff 
+#>    Elasticsearch version:   1.5.2 
+#>    ES version timestamp:    2015-04-27T09:21:06Z 
+#>    lucene version:          4.10.4
 ```
 
 ### Search
@@ -137,7 +170,7 @@ Search the `plos` index and only return 1 result
 
 
 ```r
-Search(index="plos", size=1)$hits$hits
+Search(index = "plos", size = 1)$hits$hits
 #> [[1]]
 #> [[1]]$`_index`
 #> [1] "plos"
@@ -166,7 +199,7 @@ Search the `plos` index, and the `article` document type, sort by title, and que
 
 
 ```r
-Search(index="plos", type="article", sort="title", q="antibody", size=1)$hits$hits
+Search(index = "plos", type = "article", sort = "title", q = "antibody", size = 1)$hits$hits
 #> [[1]]
 #> [[1]]$`_index`
 #> [1] "plos"
@@ -202,7 +235,7 @@ Get document with id=1
 
 
 ```r
-docs_get(index='plos', type='article', id=1)
+docs_get(index = 'plos', type = 'article', id = 4)
 #> $`_index`
 #> [1] "plos"
 #> 
@@ -210,7 +243,7 @@ docs_get(index='plos', type='article', id=1)
 #> [1] "article"
 #> 
 #> $`_id`
-#> [1] "1"
+#> [1] "4"
 #> 
 #> $`_version`
 #> [1] 1
@@ -220,18 +253,17 @@ docs_get(index='plos', type='article', id=1)
 #> 
 #> $`_source`
 #> $`_source`$id
-#> [1] "10.1371/journal.pone.0098602"
+#> [1] "10.1371/journal.pone.0107758"
 #> 
 #> $`_source`$title
-#> [1] "Population Genetic Structure of a Sandstone Specialist and a Generalist Heath Species at Two Levels of Sandstone Patchiness across the Strait of Gibraltar"
+#> [1] "Lactobacilli Inactivate Chlamydia trachomatis through Lactic Acid but Not H2O2"
 ```
-
 
 Get certain fields
 
 
 ```r
-docs_get(index='plos', type='article', id=1, fields='id')
+docs_get(index = 'plos', type = 'article', id = 4, fields = 'id')
 #> $`_index`
 #> [1] "plos"
 #> 
@@ -239,7 +271,7 @@ docs_get(index='plos', type='article', id=1, fields='id')
 #> [1] "article"
 #> 
 #> $`_id`
-#> [1] "1"
+#> [1] "4"
 #> 
 #> $`_version`
 #> [1] 1
@@ -250,7 +282,7 @@ docs_get(index='plos', type='article', id=1, fields='id')
 #> $fields
 #> $fields$id
 #> $fields$id[[1]]
-#> [1] "10.1371/journal.pone.0098602"
+#> [1] "10.1371/journal.pone.0107758"
 ```
 
 
@@ -260,7 +292,7 @@ Same index and type, different document ids
 
 
 ```r
-docs_mget(index="plos", type="article", id=1:2)
+docs_mget(index = "plos", type = "article", id = 1:2)
 #> $docs
 #> $docs[[1]]
 #> $docs[[1]]$`_index`
@@ -315,7 +347,7 @@ Different indeces, types, and ids
 
 
 ```r
-docs_mget(index_type_id=list(c("plos","article",1), c("gbif","record",1)))$docs[[1]]
+docs_mget(index_type_id = list(c("plos", "article", 1), c("gbif", "record", 1)))$docs[[1]]
 #> $`_index`
 #> [1] "plos"
 #> 
@@ -347,7 +379,7 @@ For example:
 
 
 ```r
-(out <- docs_mget(index="plos", type="article", id=1:2, raw=TRUE))
+(out <- docs_mget(index = "plos", type = "article", id = 1:2, raw = TRUE))
 #> [1] "{\"docs\":[{\"_index\":\"plos\",\"_type\":\"article\",\"_id\":\"1\",\"_version\":1,\"found\":true,\"_source\":{\"id\":\"10.1371/journal.pone.0098602\",\"title\":\"Population Genetic Structure of a Sandstone Specialist and a Generalist Heath Species at Two Levels of Sandstone Patchiness across the Strait of Gibraltar\"}},{\"_index\":\"plos\",\"_type\":\"article\",\"_id\":\"2\",\"_version\":1,\"found\":true,\"_source\":{\"id\":\"10.1371/journal.pone.0107757\",\"title\":\"Cigarette Smoke Extract Induces a Phenotypic Shift in Epithelial Cells; Involvement of HIF1α in Mesenchymal Transition\"}}]}"
 #> attr(,"class")
 #> [1] "elastic_mget"
@@ -366,6 +398,15 @@ jsonlite::fromJSON(out)
 #> 1 Population Genetic Structure of a Sandstone Specialist and a Generalist Heath Species at Two Levels of Sandstone Patchiness across the Strait of Gibraltar
 #> 2                                     Cigarette Smoke Extract Induces a Phenotypic Shift in Epithelial Cells; Involvement of HIF1α in Mesenchymal Transition
 ```
+
+## Known pain points
+
+* On secure Elasticsearch servers:
+  * `HEAD` requests don't seem to work, not sure why
+  * If you allow only `GET` requests, a number of functions that require 
+  `POST` requests obviously then won't work. A big one is `Search()`, but 
+  you can use `Search_uri()` to get around this, which uses `GET` instead 
+  of `POST`, but you can't pass a more complicated query via the body
 
 ## Meta
 
