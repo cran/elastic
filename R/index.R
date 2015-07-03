@@ -78,6 +78,11 @@
 #' \bold{index_status}: The API endpoint for this function was deprecated in
 #' Elasticsearch \code{v1.2.0}, and will likely be removed soon. Use \code{\link{index_recovery}}
 #' instead.
+#' 
+#' \bold{index_settings_update}: There are a lot of options you can change with this 
+#' function. See 
+#' https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-update-settings.html 
+#' for all the options.
 #'
 #' @examples \dontrun{
 #' # get information on an index
@@ -219,11 +224,17 @@
 #' index_clear_cache(config=verbose())
 #'
 #' # Index settings
+#' ## get settings
 #' index_settings()
 #' index_settings("_all")
 #' index_settings('gbif')
 #' index_settings(c('gbif','plos'))
 #' index_settings('*s')
+#' ## update settings
+#' index_create("foobar")
+#' settings <- list(index = list(number_of_replicas = 4))
+#' index_settings_update("foobar", body = settings)
+#' index_get("foobar")$foobar$settings
 #' }
 NULL
 
@@ -296,6 +307,18 @@ index_settings <- function(index="_all", ...) {
   url <- make_url(es_get_auth())
   url <- if(is.null(index) || index == "_all") file.path(url, "_settings") else file.path(url, esc(cl(index)), "_settings")
   es_GET_(url, ...)
+}
+
+#' @export
+#' @rdname index
+index_settings_update <- function(index=NULL, body, ...) {
+  url <- make_url(es_get_auth())
+  url <- if (is.null(index)) file.path(url, "_settings") else file.path(url, esc(cl(index)), "_settings")
+  body <- check_inputs(body)
+  tt <- PUT(url, make_up(), ..., body = body)
+  if (tt$status_code > 202) stop(error_parser(tt, 1), call. = FALSE)
+  res <- content(tt, as = "text")
+  jsonlite::fromJSON(res)
 }
 
 #' @export
@@ -381,13 +404,13 @@ close_open <- function(index, which, ...){
   content(out)
 }
 
-es_GET_wrap1 <- function(index, which, args=list(), ...){
+es_GET_wrap1 <- function(index, which, args=NULL, ...){
   url <- make_url(es_get_auth())
   url <- if(is.null(index)) file.path(url, which) else file.path(url, esc(cl(index)), which)
   es_GET_(url, args, ...)
 }
 
-es_POST_ <- function(index, which, args=list(), ...){
+es_POST_ <- function(index, which, args=NULL, ...){
   checkconn()
   url <- make_url(es_get_auth())
   url <- if(is.null(index)) file.path(url, which) else file.path(url, esc(cl(index)), which)
@@ -398,7 +421,7 @@ es_POST_ <- function(index, which, args=list(), ...){
 
 e_url <- function(x) paste0(x$base, ":", x$port)
 
-analyze_GET <- function(url, args, ...){
+analyze_GET <- function(url, args = NULL, ...){
   checkconn()
   out <- GET(url, query=args, make_up(), ...)
   stop_for_status(out)
@@ -406,7 +429,7 @@ analyze_GET <- function(url, args, ...){
   jsonlite::fromJSON(tt)
 }
 
-analyze_POST <- function(url, args, body, ...){
+analyze_POST <- function(url, args = NULL, body, ...){
   checkconn()
   body <- check_inputs(body)
   out <- POST(url, query=args, body=body, make_up(), ...)
@@ -415,7 +438,7 @@ analyze_POST <- function(url, args, body, ...){
   jsonlite::fromJSON(tt)
 }
 
-cc_POST <- function(url, args, ...){
+cc_POST <- function(url, args = NULL, ...){
   checkconn()
   tt <- POST(url, body=args, encode = "json", make_up(), ...)
   if(tt$status_code > 202) geterror(tt)

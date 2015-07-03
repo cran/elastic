@@ -1,8 +1,10 @@
 context("alias")
 
-invisible(connect())
+invisible(tryCatch(elastic::connect(), error = function(e) e))
 
 test_that("alias_get works", {
+  skip_on_cran()
+
   invisible(tryCatch(index_delete("plos", verbose = FALSE), error = function(e) e))
   invisible(index_create("plos", verbose = FALSE))
   invisible(alias_create(index = "plos", alias = "tables"))
@@ -15,6 +17,8 @@ test_that("alias_get works", {
 })
 
 test_that("aliases_get works", {
+  skip_on_cran()
+
   c <- aliases_get()
   expect_is(c, "list")
   expect_is(c$plos, "list")
@@ -24,16 +28,22 @@ test_that("aliases_get works", {
 })
 
 test_that("alias_create works", {
+  skip_on_cran()
+
   d <- invisible(alias_create(index = "plos", alias = "howdy"))
   expect_true(d$acknowledged)
 })
 
 test_that("alias_exists works", {
+  skip_on_cran()
+
   expect_false(alias_exists(index = "plos"))
   expect_true(alias_exists(alias = "tables"))
 })
 
 test_that("alias_delete works", {
+  skip_on_cran()
+
   ff <- alias_delete(index = "plos", alias = "tables")
   expect_is(ff, "list")
   expect_true(ff$acknowledged)
@@ -41,6 +51,8 @@ test_that("alias_delete works", {
 })
 
 test_that("alias_* functions fail as expected", {
+  skip_on_cran()
+
   expect_error(alias_get("adfadf"), "missing")
   expect_error(alias_get(alias = "adfadfs"), "missing")
   expect_error(alias_create("Adfafasd", "adfadf"))

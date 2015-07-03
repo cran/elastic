@@ -1,8 +1,10 @@
 context("indices")
 
-invisible(connect())
+invisible(tryCatch(elastic::connect(), error = function(e) e))
 
 test_that("index_get", {
+  skip_on_cran()
+
   a <- index_get(index = 'shakespeare')
   expect_equal(names(a), "shakespeare")
   expect_is(a, "list")
@@ -12,11 +14,15 @@ test_that("index_get", {
 })
 
 test_that("index_exists", {
+  skip_on_cran()
+
   expect_true(index_exists(index = 'shakespeare'))
   expect_false(index_exists(index = 'asdfasdfadfasdfasfasdf'))
 })
 
 test_that("index_create", {
+  skip_on_cran()
+
   ind <- "stuff_yy"
   invisible(tryCatch(index_delete(index = ind, verbose = FALSE), error = function(e) e))
   a <- index_create(index = ind, verbose = FALSE)
@@ -27,6 +33,8 @@ test_that("index_create", {
 })
 
 test_that("index_delete", {
+  skip_on_cran()
+
   nm <- "stuff_zz"
   tryCatch(index_delete(index = nm, verbose = FALSE), error = function(e) e)
   a <- index_create(index = nm, verbose = FALSE)
@@ -41,7 +49,7 @@ test_that("index_delete", {
 #   invisible(tryCatch(index_delete('test_close_open', verbose = FALSE), error = function(e) e))
 #   index_create('test_close_open', verbose = FALSE)
 #   index_open('test_close_open')
-# 
+#
 #   expect_true(index_close('test_close_open')[[1]])
 #   expect_true(index_open('test_close_open')[[1]])
 #   expect_error(index_close("adfadfafafasdfasdfasfasfasfd"), "Not Found")
@@ -49,6 +57,8 @@ test_that("index_delete", {
 # })
 
 test_that("index_status", {
+  skip_on_cran()
+
   a <- index_status('shakespeare')
   expect_is(a, "list")
   expect_named(a$indices, "shakespeare")
@@ -56,6 +66,8 @@ test_that("index_status", {
 })
 
 test_that("index_stats", {
+  skip_on_cran()
+
   a <- index_stats('shakespeare')
   expect_is(a, "list")
   expect_named(a$indices, "shakespeare")
@@ -63,6 +75,8 @@ test_that("index_stats", {
 })
 
 test_that("index_segments", {
+  skip_on_cran()
+
   a <- index_segments('shakespeare')
   expect_is(a, "list")
   expect_named(a$indices, "shakespeare")
@@ -70,6 +84,8 @@ test_that("index_segments", {
 })
 
 test_that("index_recovery", {
+  skip_on_cran()
+
   a <- index_recovery('shakespeare')
   expect_is(a, "list")
   expect_named(a$shakespeare, "shards")
@@ -77,5 +93,8 @@ test_that("index_recovery", {
 })
 
 ## cleanup -----------------------------------
-invisible(index_delete("stuff_yy", verbose = FALSE))
+tryconnect = tryCatch(elastic::connect(), error = function(e) e)
+if (!is(tryconnect, "simpleError")) {
+  invisible(index_delete("stuff_yy", verbose = FALSE))
+}
 # invisible(index_delete('test_close_open', verbose = FALSE))

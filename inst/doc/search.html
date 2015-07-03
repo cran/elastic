@@ -5,6 +5,18 @@
 
 <title>elastic searching</title>
 
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
 <!-- Styles for R syntax highlighter -->
 <style type="text/css">
    pre .operator,
@@ -45,9 +57,6 @@ var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/<
 hljs.initHighlightingOnLoad();
 </script>
 
-<!-- MathJax scripts -->
-<script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
 
 
 <style type="text/css">
@@ -60,6 +69,7 @@ body, td {
 body {
   max-width: 800px;
   margin: auto;
+  padding: 1em;
   line-height: 20px;
 }
 
@@ -67,28 +77,28 @@ tt, code, pre {
    font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
 }
 
-h1 { 
-   font-size:2.2em; 
+h1 {
+   font-size:2.2em;
 }
 
-h2 { 
-   font-size:1.8em; 
+h2 {
+   font-size:1.8em;
 }
 
-h3 { 
-   font-size:1.4em; 
+h3 {
+   font-size:1.4em;
 }
 
-h4 { 
-   font-size:1.0em; 
+h4 {
+   font-size:1.0em;
 }
 
-h5 { 
-   font-size:0.9em; 
+h5 {
+   font-size:0.9em;
 }
 
-h6 { 
-   font-size:0.8em; 
+h6 {
+   font-size:0.8em;
 }
 
 a:visited {
@@ -98,7 +108,9 @@ a:visited {
 pre, img {
   max-width: 100%;
 }
-
+pre {
+  overflow-x: auto;
+}
 pre code {
    display: block; padding: 0.5em;
 }
@@ -132,54 +144,54 @@ hr {
 }
 
 @media print {
-   * { 
-      background: transparent !important; 
-      color: black !important; 
-      filter:none !important; 
-      -ms-filter: none !important; 
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
    }
 
-   body { 
-      font-size:12pt; 
-      max-width:100%; 
-   }
-       
-   a, a:visited { 
-      text-decoration: underline; 
+   body {
+      font-size:12pt;
+      max-width:100%;
    }
 
-   hr { 
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
       visibility: hidden;
       page-break-before: always;
    }
 
-   pre, blockquote { 
-      padding-right: 1em; 
-      page-break-inside: avoid; 
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
    }
 
-   tr, img { 
-      page-break-inside: avoid; 
+   tr, img {
+      page-break-inside: avoid;
    }
 
-   img { 
-      max-width: 100% !important; 
+   img {
+      max-width: 100% !important;
    }
 
-   @page :left { 
-      margin: 15mm 20mm 15mm 10mm; 
-   }
-     
-   @page :right { 
-      margin: 15mm 10mm 15mm 20mm; 
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
    }
 
-   p, h2, h3 { 
-      orphans: 3; widows: 3; 
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
    }
 
-   h2, h3 { 
-      page-break-after: avoid; 
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
    }
 }
 </style>
@@ -192,6 +204,7 @@ hr {
 <!--
 %\VignetteEngine{knitr::knitr}
 %\VignetteIndexEntry{Search}
+%\VignetteEncoding{UTF-8}
 -->
 
 <h1>elastic searching</h1>
@@ -203,11 +216,11 @@ hr {
 
 <h2>The Search function</h2>
 
-<p>The main interface to searching documents in your Elasticsearch store is the function <code>Search()</code>. I nearly always develop R software using all lowercase, but R has a function called <code>search()</code>, and I wanted to avoid collision with that function. </p>
+<p>The main interface to searching documents in your Elasticsearch store is the function <code>Search()</code>. I nearly always develop R software using all lowercase, but R has a function called <code>search()</code>, and I wanted to avoid collision with that function.</p>
 
-<p><code>Search()</code> is an interface to both the HTTP search API (in which queries are passed in the URI of the request, meaning queries have to be relatively simple), as well as the POST API, or the Query DSL, in which queries are passed in the body of the request (so can be much more complex). </p>
+<p><code>Search()</code> is an interface to both the HTTP search API (in which queries are passed in the URI of the request, meaning queries have to be relatively simple), as well as the POST API, or the Query DSL, in which queries are passed in the body of the request (so can be much more complex).</p>
 
-<p>There are a huge amount of ways you can search Elasticsearch documents - this tutorial covers some of them, and highlights the ways in which you interact with the R outputs. </p>
+<p>There are a huge amount of ways you can search Elasticsearch documents - this tutorial covers some of them, and highlights the ways in which you interact with the R outputs.</p>
 
 <h3>Search an index</h3>
 
@@ -231,7 +244,7 @@ out$hits$total
 #&gt; [1] &quot;4&quot;
 #&gt; 
 #&gt; $`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; $`_score`
 #&gt; [1] 1
@@ -271,7 +284,7 @@ out$hits$total
 #&gt; [1] &quot;2227&quot;
 #&gt; 
 #&gt; $`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; $`_score`
 #&gt; [1] 1
@@ -311,7 +324,7 @@ out$hits$total
 #&gt; [1] &quot;4&quot;
 #&gt; 
 #&gt; $`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; $`_score`
 #&gt; [1] 1
@@ -343,7 +356,7 @@ out$hits$total
 #&gt; [1] &quot;2227&quot;
 #&gt; 
 #&gt; [[1]]$`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; [[1]]$`_score`
 #&gt; NULL
@@ -385,7 +398,7 @@ out$hits$total
 #&gt; [1] &quot;2633&quot;
 #&gt; 
 #&gt; [[2]]$`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; [[2]]$`_score`
 #&gt; NULL
@@ -429,7 +442,7 @@ out$hits$total
 #&gt; [1] &quot;2633&quot;
 #&gt; 
 #&gt; [[1]]$`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; [[1]]$`_score`
 #&gt; NULL
@@ -458,7 +471,7 @@ out$hits$total
 #&gt; [1] &quot;4974&quot;
 #&gt; 
 #&gt; [[2]]$`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; [[2]]$`_score`
 #&gt; NULL
@@ -498,7 +511,7 @@ out$hits$total
 #&gt; [1] &quot;9&quot;
 #&gt; 
 #&gt; $hits[[1]]$`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; $hits[[1]]$`_score`
 #&gt; [1] 1
@@ -511,7 +524,7 @@ out$hits$total
 
 <h3>Queries</h3>
 
-<p>Using the <code>q</code> parameter you can pass in a query, which gets passed in the URI of the query. This type of query is less powerful than the below query passed in the body of the request, using the <code>body</code> parameter. </p>
+<p>Using the <code>q</code> parameter you can pass in a query, which gets passed in the URI of the query. This type of query is less powerful than the below query passed in the body of the request, using the <code>body</code> parameter.</p>
 
 <pre><code class="r">Search(index=&quot;shakespeare&quot;, type=&quot;act&quot;, q=&quot;speaker:KING HENRY IV&quot;)$hits$total
 </code></pre>
@@ -536,7 +549,7 @@ out$hits$total
 <pre><code class="r">sapply(Search(index=&quot;shakespeare&quot;, version=TRUE, size=2)$hits$hits, &quot;[[&quot;, &quot;_version&quot;)
 </code></pre>
 
-<pre><code>#&gt; [1] 12 12
+<pre><code>#&gt; [1] 19 19
 </code></pre>
 
 <h3>Get raw data</h3>
@@ -544,12 +557,12 @@ out$hits$total
 <pre><code class="r">Search(index=&quot;shakespeare&quot;, type=&quot;scene&quot;, raw=TRUE)
 </code></pre>
 
-<pre><code>#&gt; [1] &quot;{\&quot;took\&quot;:2,\&quot;timed_out\&quot;:false,\&quot;_shards\&quot;:{\&quot;total\&quot;:5,\&quot;successful\&quot;:5,\&quot;failed\&quot;:0},\&quot;hits\&quot;:{\&quot;total\&quot;:34,\&quot;max_score\&quot;:1.0,\&quot;hits\&quot;:[{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;112\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:113,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:10,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;WESTMORELAND\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE II. London. An apartment of the Princes.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;989\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:990,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:22,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;LADY PERCY\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE IV. The Boars-Head Tavern, Eastcheap.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2462\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2463,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:21,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;FALSTAFF\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE III. The rebel camp near Shrewsbury.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2784\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2785,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:18,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;FALSTAFF\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE II. The rebel camp.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;3206\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:3207,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:8,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. Westminster Abbey.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4437\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4438,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:18,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;PLANTAGENET\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. London. The Parliament-house.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4975\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4976,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:11,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;VERNON\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. Paris. A hall of state.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;745\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:746,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:32,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;GADSHILL\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE II. The highway, near Gadshill.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2228\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2229,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:81,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;FALSTAFF\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. The rebel camp near Shrewsbury.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2588\&quot;,\&quot;_version\&quot;:12,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2589,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:28,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;SIR WALTER BLUNT\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE IV. York. The ARCHBISHOPS palace.\&quot;}}]}}&quot;
+<pre><code>#&gt; [1] &quot;{\&quot;took\&quot;:3,\&quot;timed_out\&quot;:false,\&quot;_shards\&quot;:{\&quot;total\&quot;:5,\&quot;successful\&quot;:5,\&quot;failed\&quot;:0},\&quot;hits\&quot;:{\&quot;total\&quot;:34,\&quot;max_score\&quot;:1.0,\&quot;hits\&quot;:[{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;112\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:113,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:10,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;WESTMORELAND\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE II. London. An apartment of the Princes.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;989\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:990,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:22,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;LADY PERCY\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE IV. The Boars-Head Tavern, Eastcheap.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2462\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2463,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:21,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;FALSTAFF\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE III. The rebel camp near Shrewsbury.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2784\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2785,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:18,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;FALSTAFF\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE II. The rebel camp.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;3206\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:3207,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:8,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. Westminster Abbey.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4437\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4438,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:18,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;PLANTAGENET\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. London. The Parliament-house.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4975\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4976,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:11,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;VERNON\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. Paris. A hall of state.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;745\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:746,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:32,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;GADSHILL\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE II. The highway, near Gadshill.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2228\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2229,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:81,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;FALSTAFF\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. The rebel camp near Shrewsbury.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2588\&quot;,\&quot;_version\&quot;:19,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2589,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:28,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;SIR WALTER BLUNT\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE IV. York. The ARCHBISHOPS palace.\&quot;}}]}}&quot;
 </code></pre>
 
 <h3>Curl debugging</h3>
 
-<p>Common options are <code>verbose()</code>, <code>timeout()</code>, <code>progress()</code>, <code>config(followlocation=TRUE)</code>. </p>
+<p>Common options are <code>verbose()</code>, <code>timeout()</code>, <code>progress()</code>, <code>config(followlocation=TRUE)</code>.</p>
 
 <pre><code class="r">library(&#39;httr&#39;)
 out &lt;- Search(index=&quot;shakespeare&quot;, type=&quot;line&quot;, config=verbose())
@@ -573,7 +586,7 @@ Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
 #&gt; [1] &quot;4&quot;
 #&gt; 
 #&gt; $`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; $`_score`
 #&gt; [1] 1
@@ -622,7 +635,7 @@ Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
 #&gt; [1] &quot;4&quot;
 #&gt; 
 #&gt; $`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; $`_score`
 #&gt; [1] 1
@@ -663,7 +676,7 @@ Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
 #&gt; [1] &quot;4&quot;
 #&gt; 
 #&gt; $`_version`
-#&gt; [1] 12
+#&gt; [1] 19
 #&gt; 
 #&gt; $`_score`
 #&gt; [1] 1
