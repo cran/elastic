@@ -11,12 +11,10 @@
 #' see hot threads that are in wait or block state.
 #' @param raw If TRUE (default), data is parsed to list. If FALSE, then raw JSON.
 #' @param verbose If TRUE (default) the url call used printed to console
-#' @param delay (character) By default, the shutdown will be executed after a 1 second 
-#' delay (1s). The delay can be customized by setting the delay parameter in a time 
-#' value format (e.g., \code{10s}). 
 #' @param ... Curl args passed on to \code{\link[httr]{GET}}
 #'
-#' @details \url{http://bit.ly/11gezop}
+#' @details 
+#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html}
 #'
 #' By default, all stats are returned. You can limit this by combining any of indices, os, process,
 #' jvm, network, transport, http, fs, breaker and thread_pool. With the metric parameter you can
@@ -25,6 +23,7 @@
 #' \itemize{
 #'  \item indices Indices stats about size, document count, indexing and deletion times, search
 #'  times, field cache size, merges and flushes
+#'  \item os retrieve information that concern the operating system
 #'  \item fs File system information, data path, free disk space, read/write stats
 #'  \item http HTTP connection information
 #'  \item jvm JVM stats, memory pool information, garbage collection, buffer pools
@@ -50,12 +49,8 @@
 #' nodes_info(metric='process')
 #' nodes_info(metric='jvm')
 #' nodes_info(metric='http')
+#' nodes_info(metric='network')
 #' nodes_hot_threads()
-#' nodes_shutdown()
-#' nodes_shutdown(node = "_local")
-#' nodes_shutdown(node = "_master")
-#' id <- names(nodes_info()$nodes)
-#' nodes_shutdown(node = id)
 #' }
 
 #' @export
@@ -76,13 +71,6 @@ nodes_hot_threads <- function(node=NULL, metric=NULL, threads=3, interval='500ms
   raw=FALSE, verbose=TRUE, ...) {
   args <- list(threads = threads, interval = interval, type = type)
   cat(node_GET('hot_threads', metric, node, raw = TRUE, args, ...))
-}
-
-#' @export
-#' @rdname nodes
-nodes_shutdown <- function(node=NULL, raw=FALSE, verbose=TRUE, delay=NULL, ...){
-  args <- list(delay = delay)
-  node_POST(path = '_shutdown', node, raw, args, ...)
 }
 
 node_GET <- function(path, metric, node, raw, args, ...) {

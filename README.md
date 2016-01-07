@@ -4,18 +4,26 @@ elastic
 
 
 [![Build Status](https://api.travis-ci.org/ropensci/elastic.svg)](https://travis-ci.org/ropensci/elastic)
-[![Coverage Status](https://coveralls.io/repos/ropensci/elastic/badge.svg)](https://coveralls.io/r/ropensci/elastic)
+[![codecov.io](https://codecov.io/github/ropensci/elastic/coverage.svg?branch=master)](https://codecov.io/github/ropensci/elastic?branch=master)
 [![rstudio mirror downloads](http://cranlogs.r-pkg.org/badges/elastic?color=E664A4)](https://github.com/metacran/cranlogs.app)
 <!-- [![Build status](https://ci.appveyor.com/api/projects/status/swmmw758mf1heoj2/branch/master)](https://ci.appveyor.com/project/sckott/elastic/branch/master) -->
 [![cran version](http://www.r-pkg.org/badges/version/elastic)](http://cran.rstudio.com/web/packages/elastic)
 
 **A general purpose R interface to [Elasticsearch](https://www.elastic.co/products/elasticsearch)**
 
+## Elasticsearch DSL
+
+Also check out `elasticdsl` - an R DSL for Elasticsearch - [https://github.com/ropensci/elasticdsl](https://github.com/ropensci/elasticdsl)
+
 ## Elasticsearch info
 
 * [Elasticsearch home page](https://www.elastic.co/products/elasticsearch)
 * [API docs](http://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
-* This client is being developed under `v1.6` of Elasticsearch, and will generally develop following whatever is the current version.
+
+
+## Compatibility
+
+This client is developed following the latest stable releases, currently `v2.1.1`. It is generally compatible with older versions of Elasticsearch. Unlike the [Python client](https://github.com/elastic/elasticsearch-py#compatibility), we try to keep as much compatibility as possible within a single version of this client, as that's an easier setup in R world.
 
 ## Security
 
@@ -24,9 +32,16 @@ You're fine running ES locally on your machine, but be careful just throwing up 
 * [Shield](https://www.elastic.co/products/shield) - This is a paid product provided by Elastic - so probably only applicable to enterprise users
 * DIY security - there are a variety of techniques for securing your Elasticsearch. A number of resources are collected in a [blog post](http://recology.info/2015/02/secure-elasticsearch/) - tools include putting your ES behind something like Nginx, putting basic auth on top of it, using https, etc.
 
-## Quick start
+## Installation
 
-### Install elastic
+Stable version from CRAN
+
+
+```r
+install.packages("elastic")
+```
+
+Development version from GitHub
 
 
 ```r
@@ -39,9 +54,9 @@ devtools::install_github("ropensci/elastic")
 library('elastic')
 ```
 
-### Install Elasticsearch
+## Install Elasticsearch
 
-* [Elasticsearch installation help](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/_installation.html)
+* [Elasticsearch installation help](https://www.elastic.co/guide/en/elasticsearch/reference/current/_installation.html)
 
 __w/ Docker__
 
@@ -63,36 +78,37 @@ If you're using boot2docker, you'll need to use the IP address in place of local
 
 __on OSX__
 
-+ Download zip or tar file from Elasticsearch [see here for download](http://www.elasticsearch.org/overview/elkdownloads/), e.g., `curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.6.0.tar.gz`
-+ Unzip it: `untar elasticsearch-1.6.0.tar.gz`
-+ Move it: `sudo mv /path/to/elasticsearch-1.6.0 /usr/local` (replace version with your version)
++ Download zip or tar file from Elasticsearch [see here for download](https://www.elastic.co/downloads), e.g., `curl -L -O https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.1.1/elasticsearch-2.1.1.tar.gz`
++ Extract: `tar -zxvf elasticsearch-2.1.1.tar.gz`
++ Move it: `sudo mv /path/to/elasticsearch-2.1.1 /usr/local` (replace version with your version)
 + Navigate to /usr/local: `cd /usr/local`
-+ Add shortcut: `sudo ln -s elasticsearch-1.6.0 elasticsearch` (replace version with your verioon)
++ Delete symlinked `elasticsearch` directory: `rm -rf elasticsearch`
++ Add shortcut: `sudo ln -s elasticsearch-2.1.1 elasticsearch` (replace version with your version)
 
 You can also install via Homebrew: `brew install elasticsearch`
 
-> Note: for the 1.6 upgrade of Elasticsearch, it wants you to have java 8 or greater. I downloaded Java 8 from here http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html and it seemed to work great.
+> Note: for the 1.6 and greater upgrades of Elasticsearch, they want you to have java 8 or greater. I downloaded Java 8 from here http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html and it seemed to work great.
 
-### Upgrading Elasticsearch
+## Upgrading Elasticsearch
 
 I am not totally clear on best practice here, but from what I understand, when you upgrade to a new version of Elasticsearch, place old `elasticsearch/data` and `elasticsearch/config` directories into the new installation (`elasticsearch/` dir). The new elasticsearch instance with replaced data and config directories should automatically update data to the new version and start working. Maybe if you use homebrew on a Mac to upgrade it takes care of this for you - not sure.
 
 Obviously, upgrading Elasticsearch while keeping it running is a different thing ([some help here from Elastic](http://www.elastic.co/guide/en/elasticsearch/reference/current/setup-upgrade.html)).
 
-### Start Elasticsearch
+## Start Elasticsearch
 
 * Navigate to elasticsearch: `cd /usr/local/elasticsearch`
 * Start elasticsearch: `bin/elasticsearch`
 
 I create a little bash shortcut called `es` that does both of the above commands in one step (`cd /usr/local/elasticsearch && bin/elasticsearch`).
 
-### Get some data
+## Get some data
 
 Elasticsearch has a bulk load API to load data in fast. The format is pretty weird though. It's sort of JSON, but would pass no JSON linter. I include a few data sets in `elastic` so it's easy to get up and running, and so when you run examples in this package they'll actually run the same way (hopefully).
 
 I have prepare a non-exported function useful for preparing the weird format that Elasticsearch wants for bulk data loads, that is somewhat specific to PLOS data (See below), but you could modify for your purposes. See `make_bulk_plos()` and `make_bulk_gbif()` [here](https://github.com/ropensci/elastic/blob/master/R/docs_bulk.r).
 
-#### Shakespeare data
+### Shakespeare data
 
 Elasticsearch provides some data on Shakespeare plays. I've provided a subset of this data in this package. Get the path for the file specific to your machine:
 
@@ -115,7 +131,7 @@ curl -XGET http://www.elasticsearch.org/guide/en/kibana/current/snippets/shakesp
 curl -XPUT localhost:9200/_bulk --data-binary @shakespeare.json
 ```
 
-#### Public Library of Science (PLOS) data
+### Public Library of Science (PLOS) data
 
 A dataset inluded in the `elastic` package is metadata for PLOS scholarly articles. Get the file path, then load:
 
@@ -125,7 +141,7 @@ plosdat <- system.file("examples", "plos_data.json", package = "elastic")
 docs_bulk(plosdat)
 ```
 
-#### Global Biodiversity Information Facility (GBIF) data
+### Global Biodiversity Information Facility (GBIF) data
 
 A dataset inluded in the `elastic` package is data for GBIF species occurrence records. Get the file path, then load:
 
@@ -143,11 +159,11 @@ gbifgeo <- system.file("examples", "gbif_geo.json", package = "elastic")
 docs_bulk(gbifgeo)
 ```
 
-#### More data sets
+### More data sets
 
 There are more datasets formatted for bulk loading in the `ropensci/elastic_data` GitHub repository. Find it at [https://github.com/ropensci/elastic_data](https://github.com/ropensci/elastic_data)
 
-### Initialization
+## Initialization
 
 The function `connect()` is used before doing anything else to set the connection details to your remote or local elasticsearch store. The details created by `connect()` are written to your options for the current session, and are used by `elastic` functions.
 
@@ -158,15 +174,16 @@ connect(es_port = 9200)
 #> port:      9200 
 #> username:  NULL 
 #> password:  NULL 
-#> elasticsearch details:   
-#>    status:                  200 
-#>    name:                    Shola Inkosi 
-#>    Elasticsearch version:   1.6.0 
-#>    ES version timestamp:    2015-06-09T13:36:34Z 
-#>    lucene version:          4.10.4
+#> errors:    simple 
+#> Elasticsearch (ES) details:   
+#>    name:                    Desmond Pitt 
+#>    ES version:              2.1.1 
+#>    ES version timestamp:    2015-12-15T13:05:55Z 
+#>    ES build hash:           40e2c53a6b6c2972b3d13846e450e66f4375bd71 
+#>    lucene version:          5.3.1
 ```
 
-### Search
+## Search
 
 Search the `plos` index and only return 1 result
 
@@ -181,20 +198,17 @@ Search(index = "plos", size = 1)$hits$hits
 #> [1] "article"
 #> 
 #> [[1]]$`_id`
-#> [1] "4"
-#> 
-#> [[1]]$`_version`
-#> [1] 1
+#> [1] "0"
 #> 
 #> [[1]]$`_score`
 #> [1] 1
 #> 
 #> [[1]]$`_source`
 #> [[1]]$`_source`$id
-#> [1] "10.1371/journal.pone.0107758"
+#> [1] "10.1371/journal.pone.0007737"
 #> 
 #> [[1]]$`_source`$title
-#> [1] "Lactobacilli Inactivate Chlamydia trachomatis through Lactic Acid but Not H2O2"
+#> [1] "Phospholipase C-β4 Is Essential for the Progression of the Normal Sleep Sequence and Ultradian Body Temperature Rhythms in Mice"
 ```
 
 Search the `plos` index, and the `article` document type, sort by title, and query for _antibody_, limit to 1 result
@@ -212,9 +226,6 @@ Search(index = "plos", type = "article", sort = "title", q = "antibody", size = 
 #> [[1]]$`_id`
 #> [1] "568"
 #> 
-#> [[1]]$`_version`
-#> [1] 1
-#> 
 #> [[1]]$`_score`
 #> NULL
 #> 
@@ -231,7 +242,7 @@ Search(index = "plos", type = "article", sort = "title", q = "antibody", size = 
 #> [1] "1"
 ```
 
-### Get documents
+## Get documents
 
 Get document with id=1
 
@@ -288,7 +299,7 @@ docs_get(index = 'plos', type = 'article', id = 4, fields = 'id')
 ```
 
 
-### Get multiple documents via the multiget API
+## Get multiple documents via the multiget API
 
 Same index and type, different document ids
 
@@ -373,7 +384,7 @@ docs_mget(index_type_id = list(c("plos", "article", 1), c("gbif", "record", 1)))
 #> [1] "Population Genetic Structure of a Sandstone Specialist and a Generalist Heath Species at Two Levels of Sandstone Patchiness across the Strait of Gibraltar"
 ```
 
-### Parsing
+## Parsing
 
 You can optionally get back raw `json` from `Search()`, `docs_get()`, and `docs_mget()` setting parameter `raw=TRUE`.
 
@@ -415,5 +426,7 @@ jsonlite::fromJSON(out)
 * Please [report any issues or bugs](https://github.com/ropensci/elastic/issues)
 * License: MIT
 * Get citation information for `elastic` in R doing `citation(package = 'elastic')`
+* Please note that this project is released with a [Contributor Code of Conduct](CONDUCT.md). 
+By participating in this project you agree to abide by its terms.
 
 [![rofooter](http://ropensci.org/public_images/github_footer.png)](http://ropensci.org)

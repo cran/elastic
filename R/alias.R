@@ -8,13 +8,13 @@
 #' @param filter Ignored for now
 #' @param ... Curl args passed on to \code{\link[httr]{POST}}
 #' @examples \dontrun{
+#' # Create/update an alias
+#' alias_create(index = "plos", alias = "tables")
+#' 
 #' # Retrieve a specified alias
 #' alias_get(index="plos")
 #' alias_get(alias="tables")
 #' aliases_get()
-#'
-#' # Create/update an alias
-#' alias_create(index = "plos", alias = "tables")
 #'
 #' # Check for alias existence
 #' alias_exists(index = "plos")
@@ -27,10 +27,11 @@
 #'
 #' # Curl options
 #' library("httr")
-#' aliases_get(config=verbose())
+#' alias_create(index = "plos", alias = "tables")
+#' aliases_get(alias = "tables", config=verbose())
 #' }
 #' @references
-#' \url{http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html}
+#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-aliases.html}
 #' @author Scott Chamberlain <myrmecocystus@@gmail.com>
 #' @name alias
 NULL
@@ -58,7 +59,7 @@ alias_exists <- function(index=NULL, alias=NULL, ...) {
 #' @rdname alias
 alias_create <- function(index=NULL, alias, routing=NULL, filter=NULL, ...) {
   out <- PUT(alias_url(index, alias), c(make_up(), ...))
-  stop_for_status(out)
+  geterror(out)
   jsonlite::fromJSON(content(out, "text"), FALSE)
 }
 
@@ -66,14 +67,14 @@ alias_create <- function(index=NULL, alias, routing=NULL, filter=NULL, ...) {
 #' @rdname alias
 alias_delete <- function(index=NULL, alias, ...) {
   out <- DELETE(alias_url(index, alias), c(make_up(), ...))
-  stop_for_status(out)
+  geterror(out)
   jsonlite::fromJSON(content(out, "text"), FALSE)
 }
 
 alias_GET <- function(index, alias, ignore, ...) {
   checkconn()
   tt <- GET( alias_url(index, alias), query = ec(list(ignore_unavailable = as_log(ignore))), make_up(), ...)
-  if (tt$status_code > 202) geterror(tt)
+  geterror(tt)
   jsonlite::fromJSON(content(tt, as = "text"), FALSE)
 }
 

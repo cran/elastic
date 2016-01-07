@@ -1,10 +1,8 @@
 context("count")
 
-invisible(tryCatch(elastic::connect(), error = function(e) e))
+invisible(connect())
 
 test_that("count", {
-  skip_on_cran()
-
   a <- count()
   b <- count(index = 'shakespeare')
   c <- count(index = 'shakespeare', q = "a*")
@@ -15,8 +13,8 @@ test_that("count", {
   expect_is(c, "integer")
   expect_is(d, "integer")
 
-  expect_equal(b, 5000)
+  expect_more_than(b, 10)
 
-  expect_error(count("adfadf"), "missing")
-  expect_error(count(type = "adfad"), "missing")
+  expect_error(count("adfadf"), "no such index||IndexMissing")
+  expect_error(count(type = "adfad"), "no such index||IndexMissing")
 })

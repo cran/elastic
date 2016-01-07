@@ -1,10 +1,8 @@
 context("explain")
 
-invisible(tryCatch(elastic::connect(), error = function(e) e))
+invisible(connect())
 
 test_that("explain", {
-  skip_on_cran()
-
   a <- explain(index = "shakespeare", type = "line", id = 42, q = "adfad")
 
   body <- '{
@@ -25,9 +23,9 @@ test_that("explain", {
   expect_is(b, "list")
   expect_is(c, "list")
 
-  expect_match(a$explanation$description, "no matching term")
-  expect_match(b$explanation$description, "no matching term")
-  expect_match(c$explanation$description, "weight")
+  expect_match(a$explanation$description, "Failure to meet condition||no matching term")
+  expect_match(b$explanation$description, "Failure to meet condition||no matching term")
+  expect_match(c$explanation$description, "sum of||weight")
 
   expect_false(a$matched)
   expect_false(b$matched)

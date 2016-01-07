@@ -209,7 +209,7 @@ hr {
 
 <h1>elastic introduction</h1>
 
-<p><code>elastic</code> is an R client for <a href="http://www.elasticsearch.org/">Elasticsearch</a>. This vignette is an introduction to the package, while other vignettes dive into the details of various topics.</p>
+<p><code>elastic</code> is an R client for <a href="https://www.elastic.co/products/elasticsearch">Elasticsearch</a>. This vignette is an introduction to the package, while other vignettes dive into the details of various topics.</p>
 
 <h2>Installation</h2>
 
@@ -244,14 +244,15 @@ devtools::install_github(&quot;ropensci/elastic&quot;)
 
 <p><strong>Unix (linux/osx)</strong></p>
 
-<p>Replace <code>1.6.0</code> with the version you are working with.</p>
+<p>Replace <code>2.1.1</code> with the version you are working with.</p>
 
 <ul>
-<li>Download zip or tar file from Elasticsearch <a href="https://www.elastic.co/downloads/elasticsearch">see here for download</a>, e.g., <code>curl -L -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.6.0.tar.gz</code></li>
-<li>Uncompress it: <code>tar -xvf elasticsearch-1.6.0.tar.gz</code></li>
-<li>Move it: <code>sudo mv /path/to/elasticsearch-1.6.0 /usr/local</code></li>
+<li>Download zip or tar file from Elasticsearch <a href="https://www.elastic.co/downloads">see here for download</a>, e.g., <code>curl -L -O https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.1.1/elasticsearch-2.1.1.tar.gz</code></li>
+<li>Extract: <code>tar -zxvf elasticsearch-2.1.1.tar.gz</code></li>
+<li>Move it: <code>sudo mv /path/to/elasticsearch-2.1.1 /usr/local</code> (replace version with your version)</li>
 <li>Navigate to /usr/local: <code>cd /usr/local</code></li>
-<li>Add shortcut: <code>sudo ln -s elasticsearch-1.6.0 elasticsearch</code></li>
+<li>Delete symlinked <code>elasticsearch</code> directory: <code>rm -rf elasticsearch</code></li>
+<li>Add shortcut: <code>sudo ln -s elasticsearch-2.1.1 elasticsearch</code> (replace version with your version)</li>
 </ul>
 
 <p>On OSX, you can install via Homebrew: <code>brew install elasticsearch</code></p>
@@ -282,12 +283,13 @@ devtools::install_github(&quot;ropensci/elastic&quot;)
 #&gt; port:      9200 
 #&gt; username:  NULL 
 #&gt; password:  NULL 
-#&gt; elasticsearch details:   
-#&gt;    status:                  200 
-#&gt;    name:                    Shola Inkosi 
-#&gt;    Elasticsearch version:   1.6.0 
-#&gt;    ES version timestamp:    2015-06-09T13:36:34Z 
-#&gt;    lucene version:          4.10.4
+#&gt; errors:    simple 
+#&gt; Elasticsearch (ES) details:   
+#&gt;    name:                    Desmond Pitt 
+#&gt;    ES version:              2.1.1 
+#&gt;    ES version timestamp:    2015-12-15T13:05:55Z 
+#&gt;    ES build hash:           40e2c53a6b6c2972b3d13846e450e66f4375bd71 
+#&gt;    lucene version:          5.3.1
 </code></pre>
 
 <p>On package load, your base url and port are set to <code>http://127.0.0.1</code> and <code>9200</code>, respectively. You can of course override these settings per session or for all sessions.</p>
@@ -312,7 +314,7 @@ devtools::install_github(&quot;ropensci/elastic&quot;)
 
 <p>If you need some big data to play with, the shakespeare dataset is a good one to start with. You can get the whole thing and pop it into Elasticsearch (beware, may take up to 10 minutes or so.):</p>
 
-<pre><code class="sh">curl -XGET http://www.elasticsearch.org/guide/en/kibana/current/snippets/shakespeare.json &gt; shakespeare.json
+<pre><code class="sh">curl -XGET https://www.elastic.co/guide/en/kibana/3.0/snippets/shakespeare.json &gt; shakespeare.json
 curl -XPUT localhost:9200/_bulk --data-binary @shakespeare.json
 </code></pre>
 
@@ -357,20 +359,17 @@ docs_bulk(gbifgeo)
 #&gt; [1] &quot;article&quot;
 #&gt; 
 #&gt; [[1]]$`_id`
-#&gt; [1] &quot;4&quot;
-#&gt; 
-#&gt; [[1]]$`_version`
-#&gt; [1] 1
+#&gt; [1] &quot;0&quot;
 #&gt; 
 #&gt; [[1]]$`_score`
 #&gt; [1] 1
 #&gt; 
 #&gt; [[1]]$`_source`
 #&gt; [[1]]$`_source`$id
-#&gt; [1] &quot;10.1371/journal.pone.0107758&quot;
+#&gt; [1] &quot;10.1371/journal.pone.0007737&quot;
 #&gt; 
 #&gt; [[1]]$`_source`$title
-#&gt; [1] &quot;Lactobacilli Inactivate Chlamydia trachomatis through Lactic Acid but Not H2O2&quot;
+#&gt; [1] &quot;Phospholipase C-β4 Is Essential for the Progression of the Normal Sleep Sequence and Ultradian Body Temperature Rhythms in Mice&quot;
 </code></pre>
 
 <p>Search the <code>plos</code> index, and the <code>article</code> document type, sort by title, and query for <em>antibody</em>, limit to 1 result</p>
@@ -387,9 +386,6 @@ docs_bulk(gbifgeo)
 #&gt; 
 #&gt; [[1]]$`_id`
 #&gt; [1] &quot;568&quot;
-#&gt; 
-#&gt; [[1]]$`_version`
-#&gt; [1] 1
 #&gt; 
 #&gt; [[1]]$`_score`
 #&gt; NULL

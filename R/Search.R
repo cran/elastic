@@ -1,7 +1,6 @@
 #' Full text search of Elasticsearch
 #'
 #' @export
-#'
 #' @name Search
 #' @template search_par
 #' @template search_egs
@@ -11,21 +10,22 @@
 #' @param search_path (character) The path to use for searching. Default to \code{_search},
 #' but in some cases you may already have that in the base url set using \code{\link{connect}},
 #' in which case you can set this to \code{NULL}
-#' @seealso  \code{\link{Search_uri}} \code{\link{scroll}}
+#' @seealso  \code{\link{Search_uri}} \code{\link{scroll}} 
+#' \code{\link{count}} \code{\link{validate}}
 
 Search <- function(index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL, default_operator=NULL,
   explain=NULL, source=NULL, fields=NULL, sort=NULL, track_scores=NULL, timeout=NULL,
   terminate_after=NULL, from=NULL, size=NULL, search_type=NULL, lowercase_expanded_terms=NULL,
-  analyze_wildcard=NULL, version=FALSE, body=list(), raw=FALSE, asdf=FALSE, scroll=NULL,
+  analyze_wildcard=NULL, version=FALSE, lenient=FALSE, body=list(), raw=FALSE, asdf=FALSE, scroll=NULL,
   search_path="_search", ...) {
 
-  search_POST(search_path, esc(index), esc(type),
+  search_POST(search_path, cl(esc(index)), esc(type),
     args=ec(list(df=df, analyzer=analyzer, default_operator=default_operator, explain=explain,
       `_source`=source, fields=cl(fields), sort=cl(sort), track_scores=track_scores,
       timeout=cn(timeout), terminate_after=cn(terminate_after),
       from=cn(from), size=cn(size), search_type=search_type,
       lowercase_expanded_terms=lowercase_expanded_terms, analyze_wildcard=analyze_wildcard,
-      version=version, q=q, scroll=scroll)), body, raw, asdf, ...)
+      version=as_log(version), q=q, scroll=scroll, lenient=as_log(lenient))), body, raw, asdf, ...)
 }
 
 search_POST <- function(path, index=NULL, type=NULL, args, body, raw, asdf, ...) {
@@ -44,7 +44,8 @@ search_POST <- function(path, index=NULL, type=NULL, args, body, raw, asdf, ...)
   url <- prune_trailing_slash(url)
   body <- check_inputs(body)
   tt <- POST(url, make_up(), ..., query = args, body = body)
-  if (tt$status_code > 202) stop(error_parser(tt, 1), call. = FALSE)
+  geterror(tt)
+  # if (tt$status_code > 202) stop(error_parser(tt, 1), call. = FALSE)
   res <- content(tt, as = "text")
   if (raw) res else jsonlite::fromJSON(res, asdf)
 }
@@ -53,32 +54,32 @@ prune_trailing_slash <- function(x) {
   gsub("\\/$", "", x)
 }
 
-error_parser <- function(y, shard_no = 1) {
-  res <- content(y)
-  tryerr <- tryCatch(res$error, error = function(e) e)
-  if (!is(tryerr, "simpleError")) {
-    if (!is.null(res$error)) {
-      y <- res$error
-      if (grepl("SearchParseException", y)) {
-        first <- strloc2match(y, 1, ";")
-        shards <- strsplit(substring(y, regexpr(";", y) + 17, nchar(y)), "\\}\\{")[[1]]
-        shards <- gsub("\\s}]$|\\s$", "", shards)
-        paste(first, paste0("1st shard:  ", shards[1:shard_no]), sep = "\n")
-      } else {
-        y
-      }
-    } else {
-      y
-    }
-  } else {
-    mssg <- tryCatch(http_status(y)$message, error = function(e) e)
-    if (is(mssg, "simpleError")) {
-      y$status_code
-    } else {
-      mssg
-    }
-  }
-}
+# error_parser <- function(y, shard_no = 1) {
+#   res <- content(y)
+#   tryerr <- tryCatch(res$error, error = function(e) e)
+#   if (!is(tryerr, "simpleError")) {
+#     if (!is.null(res$error)) {
+#       y <- res$error
+#       if (grepl("SearchParseException", y)) {
+#         first <- strloc2match(y, 1, ";")
+#         shards <- strsplit(substring(y, regexpr(";", y) + 17, nchar(y)), "\\}\\{")[[1]]
+#         shards <- gsub("\\s}]$|\\s$", "", shards)
+#         paste(first, paste0("1st shard:  ", shards[1:shard_no]), sep = "\n")
+#       } else {
+#         y
+#       }
+#     } else {
+#       y
+#     }
+#   } else {
+#     mssg <- tryCatch(http_status(y)$message, error = function(e) e)
+#     if (is(mssg, "simpleError")) {
+#       y$status_code
+#     } else {
+#       mssg
+#     }
+#   }
+# }
 
 strmatch <- function(x, y) regmatches(x, regexpr(y, x))
 strloc2match <- function(x, first, y) substring(x, first, regexpr(y, x) - 1)

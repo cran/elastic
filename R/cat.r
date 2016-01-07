@@ -10,7 +10,7 @@
 #' @param parse (logical) Parse to a data.frame or not. Default: \code{FALSE}
 #' @param ... Curl args passed on to \code{\link[httr]{GET}}
 #'
-#' @details See \url{http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cat.html}
+#' @details See \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/cat.html}
 #' for the cat API documentation.
 #'
 #' Note how \code{\link{cat_}} has an underscore at the end to avoid conflict with the function
@@ -34,6 +34,7 @@
 #' cat_indices()
 #' cat_master()
 #' cat_nodes()
+#' # cat_nodeattrs() # not available in older ES versions
 #' cat_pending_tasks()
 #' cat_plugins()
 #' cat_recovery(verbose=TRUE)
@@ -61,9 +62,10 @@
 #' # Get back only certain fields
 #' cat_nodes()
 #' cat_nodes(h = c('ip','port','heapPercent','name'))
+#' cat_nodes(h = c('id', 'ip', 'port', 'v', 'm'))
 #' cat_indices(verbose = TRUE)
 #' cat_indices(verbose = TRUE, h = c('index','docs.count','store.size'))
-#' 
+#'
 #' # Get back machine friendly numbers instead of the normal human friendly
 #' cat_indices(verbose = TRUE, bytes = TRUE)
 #'
@@ -74,93 +76,125 @@
 
 #' @export
 #' @rdname cat
-cat_ <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_ <- function(parse = FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('', parse = parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_aliases <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('aliases', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_aliases <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('aliases', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_allocation <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('allocation', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_allocation <- function(verbose=FALSE, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('allocation', v=verbose, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_count <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('count', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_count <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('count', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_segments <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('segments', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_segments <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('segments', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_health <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('health', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_health <- function(verbose=FALSE, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('health', v=verbose, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_indices <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('indices', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_indices <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('indices', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_master <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('master', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_master <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('master', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_nodes <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('nodes', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_nodes <- function(verbose=FALSE, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('nodes', v=verbose, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_pending_tasks <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('pending_tasks', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_nodeattrs <- function(verbose=FALSE, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_nodeattrs")
+  stop_es_version(160, "cat_nodeattrs")
+  cat_helper('nodeattrs', v=verbose, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_plugins <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('plugins', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_pending_tasks <- function(verbose=FALSE, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('pending_tasks', v=verbose, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_recovery <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('recovery', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_plugins <- function(verbose=FALSE, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('plugins', v=verbose, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_thread_pool <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('thread_pool', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_recovery <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('recovery', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
-cat_shards <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
-  cat_helper('shards', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+cat_thread_pool <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('thread_pool', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
+}
+
+#' @export
+#' @rdname cat
+cat_shards <- function(verbose=FALSE, index=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
+  cat_helper('shards', v=verbose, i=index, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
 
 #' @export
 #' @rdname cat
 cat_fielddata <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+  stop_es_version(110, "cat_aliases")
   cat_helper('fielddata', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
 }
+
+## FIXME - maybe, maybe not incorporate these
+# cat_repositories <- function(verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+#   cat_helper('repositories', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, ...)
+# }
+#
+# cat_snapshots <- function(repository, verbose=FALSE, index=NULL, fields=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
+#   cat_helper('snapshots', v=verbose, i=index, f=fields, h=h, help=help, bytes=bytes, parse=parse, r=repository, ...)
+# }
 
 
 cat_helper <- function(what='', v=FALSE, i=NULL, f=NULL, h=NULL, help=FALSE, bytes=FALSE, parse=FALSE, ...) {
@@ -171,6 +205,7 @@ cat_helper <- function(what='', v=FALSE, i=NULL, f=NULL, h=NULL, help=FALSE, byt
   if (!is.null(f)) f <- paste(f, collapse = ",")
   url <- sprintf("%s/_cat/%s", url, what)
   if (!is.null(i)) url <- paste0(url, '/', i)
+  # if (!is.null(r)) url <- paste0(url, '/', r)
   args <- ec(list(v = lnull(v), help = lnull(help), fields = f,
                   h = asnull(paste0(h, collapse = ",")),
                   bytes = ifbytes(bytes)))
@@ -192,7 +227,7 @@ cat_pretty <- function(x, verbose = FALSE, help = FALSE) {
   if (help) {
     read.table(text = x, sep = "|", stringsAsFactors = FALSE)
   } else {
-    read.table(text = x, sep = "", header = verbose, stringsAsFactors = FALSE)
+    read.delim(text = x, sep = "", header = verbose, stringsAsFactors = FALSE)
   }
 }
 

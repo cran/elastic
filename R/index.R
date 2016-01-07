@@ -1,7 +1,7 @@
 #' Index API operations
 #'
 #' @references
-#' \url{http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices.html}
+#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices.html}
 #' @author Scott Chamberlain <myrmecocystus@@gmail.com>
 #' @name index
 #'
@@ -64,12 +64,12 @@
 #'
 #' @details
 #' \bold{index_analyze}:
-#' \url{http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-analyze.html}
+#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html}
 #' This method can accept a string of text in the body, but this function passes it as a
 #' parameter in a GET request to simplify.
 #'
 #' \bold{index_flush}:
-#' \url{http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-flush.html}
+#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html}
 #' From the ES website: The flush process of an index basically frees memory from the index by
 #' flushing data to the index storage and clearing the internal transaction log. By default,
 #' Elasticsearch uses memory heuristics in order to automatically trigger flush operations as
@@ -95,12 +95,20 @@
 #' index_exists(index='shakespeare')
 #' index_exists(index='plos')
 #'
-#' # delete an index
-#' index_delete(index='plos')
-#'
 #' # create an index
+#' if (index_exists('twitter')) index_delete('twitter')
 #' index_create(index='twitter')
+#' if (index_exists('things')) index_delete('things')
 #' index_create(index='things')
+#' if (index_exists('plos')) index_delete('plos')
+#' index_create(index='plos')
+#' 
+#' # re-create an index
+#' index_recreate("deer")
+#' index_recreate("deer", verbose = FALSE)
+#'
+#' # delete an index
+#' if (index_exists('plos')) index_delete(index='plos')
 #'
 #' ## with a body
 #' body <- '{
@@ -111,6 +119,7 @@
 #'    }
 #'  }
 #' }'
+#' if (index_exists('alsothat')) index_delete('alsothat')
 #' index_create(index='alsothat', body=body)
 #'
 #' ## with mappings
@@ -123,19 +132,16 @@
 #'    }
 #'  }
 #' }'
-#' index_create(index='gbifnewgeo', body=body)
+#' if (!index_exists('gbifnewgeo')) index_create(index='gbifnewgeo', body=body)
 #' gbifgeo <- system.file("examples", "gbif_geosmall.json", package = "elastic")
 #' docs_bulk(gbifgeo)
 #'
 #' # close an index
+#' index_create('plos')
 #' index_close('plos')
 #'
 #' # open an index
 #' index_open('plos')
-#'
-#' # Get status of an index
-#' index_status('plos')
-#' index_status(c('plos','gbif'))
 #'
 #' # Get stats on an index
 #' index_stats('plos')
@@ -202,17 +208,19 @@
 #'              }
 #'       }
 #' }'
+#' if(index_exists("shakespeare2")) {
+#'    index_delete("shakespeare2")
+#' }
 #' tokenizer_set(index = "shakespeare2", body=body)
 #' index_analyze(text = "art thouh", index = "shakespeare2", analyzer='my_ngram_analyzer')
 #'
 #' # Explicitly flush one or more indices.
-#' index_flush()
 #' index_flush(index = "plos")
 #' index_flush(index = "shakespeare")
 #' index_flush(index = c("plos","shakespeare"))
-#' index_flush(wait_if_ongoing = TRUE)
+#' index_flush(index = "plos", wait_if_ongoing = TRUE)
 #' library('httr')
-#' index_flush(config=verbose())
+#' index_flush(index = "plos", config=verbose())
 #'
 #' # Clear either all caches or specific cached associated with one ore more indices.
 #' index_clear_cache()
@@ -231,6 +239,7 @@
 #' index_settings(c('gbif','plos'))
 #' index_settings('*s')
 #' ## update settings
+#' if (index_exists('foobar')) index_delete('foobar')
 #' index_create("foobar")
 #' settings <- list(index = list(number_of_replicas = 4))
 #' index_settings_update("foobar", body = settings)
@@ -241,6 +250,7 @@ NULL
 #' @export
 #' @rdname index
 index_get <- function(index=NULL, features=NULL, raw=FALSE, verbose=TRUE, ...) {
+  stop_es_version(120, "index_get")
   index_GET(index, features, raw, ...)
 }
 
@@ -259,10 +269,10 @@ index_delete <- function(index, raw=FALSE, verbose=TRUE, ...) {
   checkconn()
   url <- paste0(make_url(es_get_auth()), "/", esc(index))
   out <- DELETE(url, make_up(), ...)
-  stop_for_status(out)
   if (verbose) message(URLdecode(out$url))
+  geterror(out)
   tt <- structure(content(out, as = "text"), class = "index_delete")
-  if (raw){ tt } else { es_parse(tt) }
+  if (raw) { tt } else { es_parse(tt) }
 }
 
 #' @export
@@ -270,11 +280,23 @@ index_delete <- function(index, raw=FALSE, verbose=TRUE, ...) {
 index_create <- function(index=NULL, body=NULL, raw=FALSE, verbose=TRUE, ...) {
   checkconn()
   url <- make_url(es_get_auth())
-  out <- PUT(paste0(url, "/", index), body=body, make_up(), ...)
-  stop_for_status(out)
-  if(verbose) message(URLdecode(out$url))
-  tt <- content(out, as="text")
-  if(raw) tt else jsonlite::fromJSON(tt, FALSE)
+  out <- PUT(paste0(url, "/", esc(index)), body = body, make_up(), ...)
+  geterror(out)
+  if (verbose) message(URLdecode(out$url))
+  tt <- content(out, as = "text")
+  if (raw) tt else jsonlite::fromJSON(tt, FALSE)
+}
+
+#' @export
+#' @rdname index
+index_recreate <- function(index=NULL, body=NULL, raw=FALSE, verbose=TRUE, ...) {
+  checkconn()
+  if (index_exists(index)) {
+    if (verbose) message("deleting ", index)
+    index_delete(index, verbose = verbose)
+  }
+  if (verbose) message("creating ", index)
+  index_create(index=index, body=body, raw=raw, verbose=verbose, ...)
 }
 
 #' @export
@@ -294,8 +316,8 @@ index_open <- function(index, ...) {
 index_stats <- function(index=NULL, metric=NULL, completion_fields=NULL, fielddata_fields=NULL,
   fields=NULL, groups=NULL, level='indices', ...) {
   url <- make_url(es_get_auth())
-  url <- if(is.null(index)) file.path(url, "_stats") else file.path(url, esc(cl(index)), "_stats")
-  url <- if(!is.null(metric)) file.path(url, cl(metric)) else url
+  url <- if (is.null(index)) file.path(url, "_stats") else file.path(url, esc(cl(index)), "_stats")
+  url <- if (!is.null(metric)) file.path(url, cl(metric)) else url
   args <- ec(list(completion_fields=completion_fields, fielddata_fields=fielddata_fields,
                   fields=fields, groups=groups, level=level))
   es_GET_(url, args, ...)
@@ -316,14 +338,10 @@ index_settings_update <- function(index=NULL, body, ...) {
   url <- if (is.null(index)) file.path(url, "_settings") else file.path(url, esc(cl(index)), "_settings")
   body <- check_inputs(body)
   tt <- PUT(url, make_up(), ..., body = body)
-  if (tt$status_code > 202) stop(error_parser(tt, 1), call. = FALSE)
+  geterror(tt)
   res <- content(tt, as = "text")
   jsonlite::fromJSON(res)
 }
-
-#' @export
-#' @rdname index
-index_status <- function(index = NULL, ...) es_GET_wrap1(index, "_status", ...)
 
 #' @export
 #' @rdname index
@@ -332,6 +350,7 @@ index_segments <- function(index = NULL, ...) es_GET_wrap1(index, "_segments", .
 #' @export
 #' @rdname index
 index_recovery <- function(index = NULL, detailed = FALSE, active_only = FALSE, ...){
+  stop_es_version(110, "index_recovery")
   args <- ec(list(detailed = as_log(detailed), active_only = as_log(active_only)))
   es_GET_wrap1(index, "_recovery", args, ...)
 }
@@ -351,6 +370,7 @@ index_optimize <- function(index = NULL, max_num_segments = NULL, only_expunge_d
 #' @export
 #' @rdname index
 index_upgrade <- function(index = NULL, wait_for_completion = FALSE, ...) {
+  stop_es_version(120, "index_get")
   args <- ec(list(wait_for_completion = as_log(wait_for_completion)))
   es_POST_(index, "_upgrade", args, ...)
 }
@@ -400,7 +420,8 @@ close_open <- function(index, which, ...){
   url <- make_url(es_get_auth())
   url <- sprintf("%s/%s/%s", url, esc(index), which)
   out <- POST(url, make_up(), ...)
-  stop_for_status(out)
+  # stop_for_status(out)
+  geterror(out)
   content(out)
 }
 

@@ -13,7 +13,7 @@
 #' @param ... Further args passed on to elastic search HTTP API as parameters.
 #' 
 #' @references
-#' \url{http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-get.html}
+#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-get.html}
 #' 
 #' @examples \dontrun{
 #' docs_get(index='shakespeare', type='line', id=10)
@@ -47,7 +47,7 @@ docs_get <- function(index, type, id, source=FALSE, fields=NULL, exists=FALSE,
     if (out$status_code == 200) TRUE else FALSE
   } else {
     out <- GET(url, query = args, mc(make_up(), callopts))
-    stop_for_status(out)
+    if (out$status_code > 202) stop(out$status_code, " - document not found", call. = FALSE)
     if (verbose) message(URLdecode(out$url))
     if (raw) { 
       content(out, as = "text") 

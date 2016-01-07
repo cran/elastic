@@ -12,16 +12,16 @@
 #' \itemize{
 #'  \item Download zip or tar file from Elasticsearch see here for download:
 #'  \url{https://www.elastic.co/downloads/elasticsearch}
-#'  \item Unzip it: \code{untar elasticsearch-1.6.0.tar.gz}
-#'  \item Move it: \code{sudo mv /path/to/elasticsearch-1.6.0 /usr/local}
+#'  \item Unzip it: \code{untar elasticsearch-2.1.1.tar.gz}
+#'  \item Move it: \code{sudo mv elasticsearch-2.1.1 /usr/local}
 #'  (replace version with your version)
 #'  \item Navigate to /usr/local: \code{cd /usr/local}
-#'  \item Add shortcut: \code{sudo ln -s elasticsearch-1.6.0 elasticsearch}
+#'  \item Add shortcut: \code{sudo ln -s elasticsearch-2.1.1 elasticsearch}
 #'  (replace version with your verioon)
 #' }
 #'
 #' For help on other platforms, see
-#' \url{http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/_installation.html}
+#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/_installation.html}
 #'
 #' \bold{Start Elasticsearch}
 #'
@@ -58,10 +58,23 @@
 #'  \url{http://recology.info/2015/02/secure-elasticsearch/}
 #' }
 #'
-#' @importFrom utils read.table txtProgressBar setTxtProgressBar URLdecode modifyList
+#' @section Elasticsearch changes:
+#' As of Elasticsearch v2:
+#' \itemize{
+#'  \item You can no longer create fields with dots in the name.
+#'  \item Type names may not start with a dot (other than the special \code{.percolator} type)
+#'  \item Type names may not be longer than 255 characters
+#'  \item Types may no longer be deleted
+#'  \item Queries and filters have been merged - all filter clauses are now query clauses.
+#'     Instead, query clauses can now be used in query context or in filter context. See
+#'     examples in \code{\link{Search}} or \code{\link{Search_uri}}
+#'}
+#'
+#' @importFrom utils read.table read.delim txtProgressBar setTxtProgressBar URLdecode modifyList
 #' @importFrom methods is
 #' @importFrom httr HEAD GET POST PUT DELETE content authenticate stop_for_status upload_file http_status
 #' @importFrom curl curl_escape
+#' @importFrom jsonlite fromJSON toJSON
 #' @docType package
 #' @aliases elastic-package
 #' @author Scott Chamberlain \email{myrmecocystus@@gmail.com}

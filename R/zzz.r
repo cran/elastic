@@ -11,7 +11,8 @@ scroll_POST <- function(path, args, body, raw, ...) {
   checkconn()
   url <- make_url(es_get_auth())
   tt <- POST(file.path(url, path), make_up(), ..., query = args, body = body)
-  if (tt$status_code > 202) stop(error_parser(content(tt)$error, 1))
+  geterror(tt)
+  # if (tt$status_code > 202) stop(error_parser(content(tt)$error, 1))
   res <- content(tt, as = "text")
   if (raw) res else jsonlite::fromJSON(res, FALSE)
 }
@@ -38,5 +39,12 @@ make_up <- function() {
     authenticate(up$user, up$pwd)
   } else {
     list()
+  }
+}
+
+stop_es_version <- function(ver_check, fxn) {
+  ver <- as.numeric(gsub("\\.", "", connection()$es_deets$version$number))
+  if (ver < ver_check) {
+    stop(fxn, " is not available for this Elasticsearch version", call. = FALSE)
   }
 }
