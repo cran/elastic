@@ -13,6 +13,9 @@
 #' @param doc_ids An optional vector (character or numeric/integer) of document ids to use.
 #' This vector has to equal the size of the documents you are passing in, and will error
 #' if not. If you pass a factor we convert to character. Default: not passed
+#' @param es_ids (boolean) Let Elasticsearch assign document IDs as UUIDs. These are sequential,
+#' so there is order to the IDs they assign. If \code{TRUE}, \code{doc_ids} is ignored.
+#' Default: \code{TRUE}
 #' @param raw (logical) Get raw JSON back or not.
 #' @param ... Pass on curl options to \code{\link[httr]{POST}}
 #' @details More on the Bulk API:
@@ -32,6 +35,15 @@
 #'
 #' A progress bar gives the progress for data.frames and lists
 #'
+#' @section Document IDs:
+#' Document IDs can be passed in via the \code{doc_ids} paramater when passing in
+#' data.frame or list, but not with files. If ids not passed to \code{doc_ids}, 
+#' we assign document IDs from 1 to length of the object (rows of a data.frame,
+#' or length of a list). In the future we may allow the user to select whether
+#' they want to assign sequential numeric IDs or to allow Elasticsearch to 
+#' assign IDs, which are UUIDs that are actually sequential, so you still can
+#' determine an order of your documents.
+#'
 #' @section Large numbers for document IDs:
 #' Until recently, if you had very large integers for document IDs, \code{docs_bulk}
 #' failed. It should be fixed now. Let us know if not.
@@ -50,6 +62,8 @@
 #'
 #' # From a data.frame
 #' docs_bulk(mtcars, index = "hello", type = "world")
+#' ## field names cannot contain dots
+#' names(iris) <- gsub("\\.", "_", names(iris))
 #' docs_bulk(iris, "iris", "flowers")
 #' ## type can be missing, but index can not
 #' docs_bulk(iris, "flowers")
@@ -89,7 +103,7 @@
 #'            (tt[1] + tt[2] + 1):sum(tt))
 #' for (i in seq_along(files)) {
 #'   d <- read.csv(files[[i]])
-#'   docs_bulk(d, index = "testes", type = "docs", doc_ids = ids[[i]])
+#'   docs_bulk(d, index = "testes", type = "docs", doc_ids = ids[[i]], es_ids = FALSE)
 #' }
 #' count("testes", "docs")
 #' index_delete("testes")
@@ -119,14 +133,14 @@
 #' index_delete("testes")
 #' }
 docs_bulk <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                      doc_ids = NULL, raw=FALSE, ...) {
+                      doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...) {
 
   UseMethod("docs_bulk")
 }
 
 #' @export
 docs_bulk.data.frame <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                                 doc_ids = NULL, raw = FALSE, ...) {
+                                 doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...) {
 
   checkconn()
   if (is.null(index)) {
@@ -152,13 +166,13 @@ docs_bulk.data.frame <- function(x, index = NULL, type = NULL, chunk_size = 1000
   on.exit(close(pb))
   for (i in seq_along(data_chks)) {
     setTxtProgressBar(pb, i)
-    docs_bulk(make_bulk(x[data_chks[[i]], ], index, type, id_chks[[i]]), ...)
+    docs_bulk(make_bulk(x[data_chks[[i]], ], index, type, id_chks[[i]], es_ids), ...)
   }
 }
 
 #' @export
 docs_bulk.list <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                           doc_ids = NULL, raw = FALSE, ...) {
+                           doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...) {
 
   checkconn()
   if (is.null(index)) {
@@ -185,30 +199,27 @@ docs_bulk.list <- function(x, index = NULL, type = NULL, chunk_size = 1000,
   on.exit(close(pb))
   for (i in seq_along(data_chks)) {
     setTxtProgressBar(pb, i)
-    docs_bulk(make_bulk(x[data_chks[[i]]], index, type, id_chks[[i]]), ...)
+    docs_bulk(make_bulk(x[data_chks[[i]]], index, type, id_chks[[i]], es_ids), ...)
   }
 }
 
 #' @export
 docs_bulk.character <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                                doc_ids = NULL, raw=FALSE, ...) {
+                                doc_ids = NULL, es_ids = TRUE, raw=FALSE, ...) {
 
   on.exit(close_conns())
   checkconn()
   stopifnot(file.exists(x))
   conn <- es_get_auth()
   url <- paste0(conn$base, ":", conn$port, '/_bulk')
-  tt <- POST(url, make_up(), ..., body = upload_file(x, type = "application/json"), encode = "json")
-  if (tt$status_code > 202) {
-    if (tt$status_code > 202) stop(content(tt)$error)
-    if (content(tt)$status == "ERROR" | content(tt)$status == 500) stop(content(tt)$error_message)
-  }
-  res <- content(tt, as = "text")
+  tt <- POST(url, make_up(), es_env$headers, ..., body = upload_file(x, type = "application/json"), encode = "json")
+  geterror(tt)
+  res <- cont_utf8(tt)
   res <- structure(res, class = "bulk_make")
   if (raw) res else es_parse(res)
 }
 
-make_bulk <- function(df, index, type, counter) {
+make_bulk <- function(df, index, type, counter, es_ids) {
   if (!is.character(counter)) {
     if (max(counter) >= 10000000000) {
       scipen <- getOption("scipen")
@@ -216,20 +227,20 @@ make_bulk <- function(df, index, type, counter) {
       on.exit(options(scipen = scipen))
     }
   }
-  metadata_fmt <- if (is.character(counter)) {
-    '{"index":{"_index":"%s","_type":"%s","_id":"%s"}}'
+  metadata_fmt <- if (es_ids) {
+    '{"index":{"_index":"%s","_type":"%s"}}'
   } else {
-    '{"index":{"_index":"%s","_type":"%s","_id":%s}}'
+    if (is.character(counter)) {
+      '{"index":{"_index":"%s","_type":"%s","_id":"%s"}}'
+    } else {
+      '{"index":{"_index":"%s","_type":"%s","_id":%s}}'
+    }
   }
   metadata <- sprintf(
     metadata_fmt,
     index,
     type,
-    if (is.numeric(counter)) {
-      counter - 1L
-    } else {
-      counter
-    }
+    counter
   )
   data <- jsonlite::toJSON(df, collapse = FALSE)
   tmpf <- tempfile("elastic__")
@@ -300,7 +311,7 @@ make_bulk_plos <- function(n = 1000, index='plos', type='article', fields=c('id'
   args <- ec(list(q = "*:*", rows=n, fl=paste0(fields, collapse = ","), fq='doc_type:full', wt='json'))
   res <- GET("http://api.plos.org/search", query=args)
   stop_for_status(res)
-  tt <- jsonlite::fromJSON(content(res, as = "text"), FALSE)
+  tt <- jsonlite::fromJSON(cont_utf8(res), FALSE)
   docs <- tt$response$docs
   docs <- lapply(docs, function(x){
     x[sapply(x, length)==0] <- "null"
@@ -340,5 +351,5 @@ make_bulk_gbif <- function(n = 600, index='gbif', type='record', filename = "~/g
 
 getgbif <- function(x){
   res <- GET("http://api.gbif.org/v1/occurrence/search", query=list(limit=300, offset=x))
-  jsonlite::fromJSON(content(res, "text"), FALSE)$results
+  jsonlite::fromJSON(cont_utf8(res), FALSE)$results
 }

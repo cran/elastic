@@ -209,9 +209,9 @@ cat_helper <- function(what='', v=FALSE, i=NULL, f=NULL, h=NULL, help=FALSE, byt
   args <- ec(list(v = lnull(v), help = lnull(help), fields = f,
                   h = asnull(paste0(h, collapse = ",")),
                   bytes = ifbytes(bytes)))
-  out <- GET(url, query = args, make_up(), ...)
+  out <- GET(url, query = args, make_up(), es_env$headers, ...)
   if (out$status_code > 202) geterror(out)
-  dat <- content(out, as = "text")
+  dat <- cont_utf8(out)
   if (identical(dat, "")) {
     message("Nothing to print")
   } else {

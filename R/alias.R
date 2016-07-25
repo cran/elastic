@@ -58,24 +58,26 @@ alias_exists <- function(index=NULL, alias=NULL, ...) {
 #' @export
 #' @rdname alias
 alias_create <- function(index=NULL, alias, routing=NULL, filter=NULL, ...) {
-  out <- PUT(alias_url(index, alias), c(make_up(), ...))
+  out <- PUT(alias_url(index, alias), c(es_env$headers, make_up(), ...))
   geterror(out)
-  jsonlite::fromJSON(content(out, "text"), FALSE)
+  jsonlite::fromJSON(cont_utf8(out), FALSE)
 }
 
 #' @export
 #' @rdname alias
 alias_delete <- function(index=NULL, alias, ...) {
-  out <- DELETE(alias_url(index, alias), c(make_up(), ...))
+  out <- DELETE(alias_url(index, alias), c(es_env$headers, make_up(), ...))
   geterror(out)
-  jsonlite::fromJSON(content(out, "text"), FALSE)
+  jsonlite::fromJSON(cont_utf8(out), FALSE)
 }
 
 alias_GET <- function(index, alias, ignore, ...) {
   checkconn()
-  tt <- GET( alias_url(index, alias), query = ec(list(ignore_unavailable = as_log(ignore))), make_up(), ...)
+  tt <- GET(alias_url(index, alias), 
+             query = ec(list(ignore_unavailable = as_log(ignore))), 
+             make_up(), es_env$headers, ...)
   geterror(tt)
-  jsonlite::fromJSON(content(tt, as = "text"), FALSE)
+  jsonlite::fromJSON(cont_utf8(tt), FALSE)
 }
 
 alias_url <- function(index, alias) {

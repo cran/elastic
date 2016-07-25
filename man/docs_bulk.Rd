@@ -5,7 +5,7 @@
 \title{Use the bulk API to create, index, update, or delete documents.}
 \usage{
 docs_bulk(x, index = NULL, type = NULL, chunk_size = 1000,
-  doc_ids = NULL, raw = FALSE, ...)
+  doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...)
 }
 \arguments{
 \item{x}{A data.frame or path to a file to load in the bulk API}
@@ -24,6 +24,10 @@ is ignored if you pass a file name. Default: 1000}
 \item{doc_ids}{An optional vector (character or numeric/integer) of document ids to use.
 This vector has to equal the size of the documents you are passing in, and will error
 if not. If you pass a factor we convert to character. Default: not passed}
+
+\item{es_ids}{(boolean) Let Elasticsearch assign document IDs as UUIDs. These are sequential,
+so there is order to the IDs they assign. If \code{TRUE}, \code{doc_ids} is ignored.
+Default: \code{TRUE}}
 
 \item{raw}{(logical) Get raw JSON back or not.}
 
@@ -50,6 +54,17 @@ as well.
 
 A progress bar gives the progress for data.frames and lists
 }
+\section{Document IDs}{
+
+Document IDs can be passed in via the \code{doc_ids} paramater when passing in
+data.frame or list, but not with files. If ids not passed to \code{doc_ids}, 
+we assign document IDs from 1 to length of the object (rows of a data.frame,
+or length of a list). In the future we may allow the user to select whether
+they want to assign sequential numeric IDs or to allow Elasticsearch to 
+assign IDs, which are UUIDs that are actually sequential, so you still can
+determine an order of your documents.
+}
+
 \section{Large numbers for document IDs}{
 
 Until recently, if you had very large integers for document IDs, \code{docs_bulk}
@@ -70,6 +85,8 @@ docs_bulk(plosdat, config=verbose())
 
 # From a data.frame
 docs_bulk(mtcars, index = "hello", type = "world")
+## field names cannot contain dots
+names(iris) <- gsub("\\\\.", "_", names(iris))
 docs_bulk(iris, "iris", "flowers")
 ## type can be missing, but index can not
 docs_bulk(iris, "flowers")
@@ -109,7 +126,7 @@ ids <- list(1:tt[1],
            (tt[1] + tt[2] + 1):sum(tt))
 for (i in seq_along(files)) {
   d <- read.csv(files[[i]])
-  docs_bulk(d, index = "testes", type = "docs", doc_ids = ids[[i]])
+  docs_bulk(d, index = "testes", type = "docs", doc_ids = ids[[i]], es_ids = FALSE)
 }
 count("testes", "docs")
 index_delete("testes")

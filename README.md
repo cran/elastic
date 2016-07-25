@@ -4,10 +4,10 @@ elastic
 
 
 [![Build Status](https://api.travis-ci.org/ropensci/elastic.svg)](https://travis-ci.org/ropensci/elastic)
-[![codecov.io](https://codecov.io/github/ropensci/elastic/coverage.svg?branch=master)](https://codecov.io/github/ropensci/elastic?branch=master)
 [![rstudio mirror downloads](http://cranlogs.r-pkg.org/badges/elastic?color=E664A4)](https://github.com/metacran/cranlogs.app)
+[![cran version](http://www.r-pkg.org/badges/version/elastic)](https://cran.r-project.org/package=elastic)
+<!-- [![codecov.io](https://codecov.io/github/ropensci/elastic/coverage.svg?branch=master)](https://codecov.io/github/ropensci/elastic?branch=master) -->
 <!-- [![Build status](https://ci.appveyor.com/api/projects/status/swmmw758mf1heoj2/branch/master)](https://ci.appveyor.com/project/sckott/elastic/branch/master) -->
-[![cran version](http://www.r-pkg.org/badges/version/elastic)](http://cran.rstudio.com/web/packages/elastic)
 
 **A general purpose R interface to [Elasticsearch](https://www.elastic.co/products/elasticsearch)**
 
@@ -23,7 +23,7 @@ Also check out `elasticdsl` - an R DSL for Elasticsearch - [https://github.com/r
 
 ## Compatibility
 
-This client is developed following the latest stable releases, currently `v2.1.1`. It is generally compatible with older versions of Elasticsearch. Unlike the [Python client](https://github.com/elastic/elasticsearch-py#compatibility), we try to keep as much compatibility as possible within a single version of this client, as that's an easier setup in R world.
+This client is developed following the latest stable releases, currently `v2.3.4`. It is generally compatible with older versions of Elasticsearch. Unlike the [Python client](https://github.com/elastic/elasticsearch-py#compatibility), we try to keep as much compatibility as possible within a single version of this client, as that's an easier setup in R world.
 
 ## Security
 
@@ -78,12 +78,12 @@ If you're using boot2docker, you'll need to use the IP address in place of local
 
 __on OSX__
 
-+ Download zip or tar file from Elasticsearch [see here for download](https://www.elastic.co/downloads), e.g., `curl -L -O https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.1.1/elasticsearch-2.1.1.tar.gz`
-+ Extract: `tar -zxvf elasticsearch-2.1.1.tar.gz`
-+ Move it: `sudo mv /path/to/elasticsearch-2.1.1 /usr/local` (replace version with your version)
++ Download zip or tar file from Elasticsearch [see here for download](https://www.elastic.co/downloads), e.g., `curl -L -O https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.3.4/elasticsearch-2.3.4.tar.gz`
++ Extract: `tar -zxvf elasticsearch-2.3.4.tar.gz`
++ Move it: `sudo mv elasticsearch-2.3.4 /usr/local` (replace version with your version)
 + Navigate to /usr/local: `cd /usr/local`
 + Delete symlinked `elasticsearch` directory: `rm -rf elasticsearch`
-+ Add shortcut: `sudo ln -s elasticsearch-2.1.1 elasticsearch` (replace version with your version)
++ Add shortcut: `sudo ln -s elasticsearch-2.3.4 elasticsearch` (replace version with your version)
 
 You can also install via Homebrew: `brew install elasticsearch`
 
@@ -127,7 +127,7 @@ docs_bulk(shakespeare)
 If you need some big data to play with, the shakespeare dataset is a good one to start with. You can get the whole thing and pop it into Elasticsearch (beware, may take up to 10 minutes or so.):
 
 ```sh
-curl -XGET http://www.elasticsearch.org/guide/en/kibana/current/snippets/shakespeare.json > shakespeare.json
+curl -XGET https://www.elastic.co/guide/en/kibana/3.0/snippets/shakespeare.json > shakespeare.json
 curl -XPUT localhost:9200/_bulk --data-binary @shakespeare.json
 ```
 
@@ -170,17 +170,19 @@ The function `connect()` is used before doing anything else to set the connectio
 
 ```r
 connect(es_port = 9200)
-#> url:       http://127.0.0.1 
-#> port:      9200 
-#> username:  NULL 
-#> password:  NULL 
-#> errors:    simple 
-#> Elasticsearch (ES) details:   
-#>    name:                    Desmond Pitt 
-#>    ES version:              2.1.1 
-#>    ES version timestamp:    2015-12-15T13:05:55Z 
-#>    ES build hash:           40e2c53a6b6c2972b3d13846e450e66f4375bd71 
-#>    lucene version:          5.3.1
+#> transport:  http
+#> host:       127.0.0.1
+#> port:      9200
+#> headers (names):  NULL
+#> username:  NULL
+#> password:  NULL
+#> errors:    simple
+#> Elasticsearch (ES) details:
+#>    name:                    Doctor Anthony Droom
+#>    ES version:              2.3.4
+#>    ES version timestamp:    2016-06-30T11:24:31Z
+#>    ES build hash:           e455fd0c13dceca8dbbdbb1665d068ae55dabe3f
+#>    lucene version:          5.5.0
 ```
 
 ## Search
@@ -193,20 +195,20 @@ Search(index = "plos", size = 1)$hits$hits
 #> [[1]]
 #> [[1]]$`_index`
 #> [1] "plos"
-#> 
+#>
 #> [[1]]$`_type`
 #> [1] "article"
-#> 
+#>
 #> [[1]]$`_id`
 #> [1] "0"
-#> 
+#>
 #> [[1]]$`_score`
 #> [1] 1
-#> 
+#>
 #> [[1]]$`_source`
 #> [[1]]$`_source`$id
 #> [1] "10.1371/journal.pone.0007737"
-#> 
+#>
 #> [[1]]$`_source`$title
 #> [1] "Phospholipase C-β4 Is Essential for the Progression of the Normal Sleep Sequence and Ultradian Body Temperature Rhythms in Mice"
 ```
@@ -219,24 +221,24 @@ Search(index = "plos", type = "article", sort = "title", q = "antibody", size = 
 #> [[1]]
 #> [[1]]$`_index`
 #> [1] "plos"
-#> 
+#>
 #> [[1]]$`_type`
 #> [1] "article"
-#> 
+#>
 #> [[1]]$`_id`
 #> [1] "568"
-#> 
+#>
 #> [[1]]$`_score`
 #> NULL
-#> 
+#>
 #> [[1]]$`_source`
 #> [[1]]$`_source`$id
 #> [1] "10.1371/journal.pone.0085002"
-#> 
+#>
 #> [[1]]$`_source`$title
 #> [1] "Evaluation of 131I-Anti-Angiotensin II Type 1 Receptor Monoclonal Antibody as a Reporter for Hepatocellular Carcinoma"
-#> 
-#> 
+#>
+#>
 #> [[1]]$sort
 #> [[1]]$sort[[1]]
 #> [1] "1"
@@ -251,23 +253,23 @@ Get document with id=1
 docs_get(index = 'plos', type = 'article', id = 4)
 #> $`_index`
 #> [1] "plos"
-#> 
+#>
 #> $`_type`
 #> [1] "article"
-#> 
+#>
 #> $`_id`
 #> [1] "4"
-#> 
+#>
 #> $`_version`
 #> [1] 1
-#> 
+#>
 #> $found
 #> [1] TRUE
-#> 
+#>
 #> $`_source`
 #> $`_source`$id
 #> [1] "10.1371/journal.pone.0107758"
-#> 
+#>
 #> $`_source`$title
 #> [1] "Lactobacilli Inactivate Chlamydia trachomatis through Lactic Acid but Not H2O2"
 ```
@@ -279,19 +281,19 @@ Get certain fields
 docs_get(index = 'plos', type = 'article', id = 4, fields = 'id')
 #> $`_index`
 #> [1] "plos"
-#> 
+#>
 #> $`_type`
 #> [1] "article"
-#> 
+#>
 #> $`_id`
 #> [1] "4"
-#> 
+#>
 #> $`_version`
 #> [1] 1
-#> 
+#>
 #> $found
 #> [1] TRUE
-#> 
+#>
 #> $fields
 #> $fields$id
 #> $fields$id[[1]]
@@ -310,48 +312,48 @@ docs_mget(index = "plos", type = "article", id = 1:2)
 #> $docs[[1]]
 #> $docs[[1]]$`_index`
 #> [1] "plos"
-#> 
+#>
 #> $docs[[1]]$`_type`
 #> [1] "article"
-#> 
+#>
 #> $docs[[1]]$`_id`
 #> [1] "1"
-#> 
+#>
 #> $docs[[1]]$`_version`
 #> [1] 1
-#> 
+#>
 #> $docs[[1]]$found
 #> [1] TRUE
-#> 
+#>
 #> $docs[[1]]$`_source`
 #> $docs[[1]]$`_source`$id
 #> [1] "10.1371/journal.pone.0098602"
-#> 
+#>
 #> $docs[[1]]$`_source`$title
 #> [1] "Population Genetic Structure of a Sandstone Specialist and a Generalist Heath Species at Two Levels of Sandstone Patchiness across the Strait of Gibraltar"
-#> 
-#> 
-#> 
+#>
+#>
+#>
 #> $docs[[2]]
 #> $docs[[2]]$`_index`
 #> [1] "plos"
-#> 
+#>
 #> $docs[[2]]$`_type`
 #> [1] "article"
-#> 
+#>
 #> $docs[[2]]$`_id`
 #> [1] "2"
-#> 
+#>
 #> $docs[[2]]$`_version`
 #> [1] 1
-#> 
+#>
 #> $docs[[2]]$found
 #> [1] TRUE
-#> 
+#>
 #> $docs[[2]]$`_source`
 #> $docs[[2]]$`_source`$id
 #> [1] "10.1371/journal.pone.0107757"
-#> 
+#>
 #> $docs[[2]]$`_source`$title
 #> [1] "Cigarette Smoke Extract Induces a Phenotypic Shift in Epithelial Cells; Involvement of HIF1α in Mesenchymal Transition"
 ```
@@ -363,23 +365,23 @@ Different indeces, types, and ids
 docs_mget(index_type_id = list(c("plos", "article", 1), c("gbif", "record", 1)))$docs[[1]]
 #> $`_index`
 #> [1] "plos"
-#> 
+#>
 #> $`_type`
 #> [1] "article"
-#> 
+#>
 #> $`_id`
 #> [1] "1"
-#> 
+#>
 #> $`_version`
 #> [1] 1
-#> 
+#>
 #> $found
 #> [1] TRUE
-#> 
+#>
 #> $`_source`
 #> $`_source`$id
 #> [1] "10.1371/journal.pone.0098602"
-#> 
+#>
 #> $`_source`$title
 #> [1] "Population Genetic Structure of a Sandstone Specialist and a Generalist Heath Species at Two Levels of Sandstone Patchiness across the Strait of Gibraltar"
 ```
@@ -426,7 +428,7 @@ jsonlite::fromJSON(out)
 * Please [report any issues or bugs](https://github.com/ropensci/elastic/issues)
 * License: MIT
 * Get citation information for `elastic` in R doing `citation(package = 'elastic')`
-* Please note that this project is released with a [Contributor Code of Conduct](CONDUCT.md). 
+* Please note that this project is released with a [Contributor Code of Conduct](CONDUCT.md).
 By participating in this project you agree to abide by its terms.
 
 [![rofooter](http://ropensci.org/public_images/github_footer.png)](http://ropensci.org)

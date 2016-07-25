@@ -43,16 +43,17 @@ docs_get <- function(index, type, id, source=FALSE, fields=NULL, exists=FALSE,
   if (source) url <- paste(url, '_source', sep = "/")
 
   if (exists) {
-    out <- HEAD(url, query = args, mc(make_up(), callopts))
+    out <- HEAD(url, query = args, c(es_env$headers, mc(make_up(), callopts)))
     if (out$status_code == 200) TRUE else FALSE
   } else {
-    out <- GET(url, query = args, mc(make_up(), callopts))
-    if (out$status_code > 202) stop(out$status_code, " - document not found", call. = FALSE)
+    out <- GET(url, query = args, c(es_env$headers, mc(make_up(), callopts)))
+    geterror(out)
+    #if (out$status_code > 202) stop(out$status_code, " - document not found", call. = FALSE)
     if (verbose) message(URLdecode(out$url))
     if (raw) { 
-      content(out, as = "text") 
+      cont_utf8(out) 
     } else { 
-      jsonlite::fromJSON(content(out, as = "text"), FALSE) 
+      jsonlite::fromJSON(cont_utf8(out), FALSE) 
     }
   }
 }

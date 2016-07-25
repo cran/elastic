@@ -271,7 +271,7 @@ index_delete <- function(index, raw=FALSE, verbose=TRUE, ...) {
   out <- DELETE(url, make_up(), ...)
   if (verbose) message(URLdecode(out$url))
   geterror(out)
-  tt <- structure(content(out, as = "text"), class = "index_delete")
+  tt <- structure(cont_utf8(out), class = "index_delete")
   if (raw) { tt } else { es_parse(tt) }
 }
 
@@ -283,7 +283,7 @@ index_create <- function(index=NULL, body=NULL, raw=FALSE, verbose=TRUE, ...) {
   out <- PUT(paste0(url, "/", esc(index)), body = body, make_up(), ...)
   geterror(out)
   if (verbose) message(URLdecode(out$url))
-  tt <- content(out, as = "text")
+  tt <- cont_utf8(out)
   if (raw) tt else jsonlite::fromJSON(tt, FALSE)
 }
 
@@ -339,7 +339,7 @@ index_settings_update <- function(index=NULL, body, ...) {
   body <- check_inputs(body)
   tt <- PUT(url, make_up(), ..., body = body)
   geterror(tt)
-  res <- content(tt, as = "text")
+  res <- cont_utf8(tt)
   jsonlite::fromJSON(res)
 }
 
@@ -364,7 +364,7 @@ index_optimize <- function(index = NULL, max_num_segments = NULL, only_expunge_d
                   flush = as_log(flush),
                   wait_for_merge = as_log(wait_for_merge)
   ))
-  es_POST_(index, "_optimize", args, ...)
+  es_POST_(index, which = "_optimize", args, ...)
 }
 
 #' @export
@@ -420,9 +420,8 @@ close_open <- function(index, which, ...){
   url <- make_url(es_get_auth())
   url <- sprintf("%s/%s/%s", url, esc(index), which)
   out <- POST(url, make_up(), ...)
-  # stop_for_status(out)
   geterror(out)
-  content(out)
+  jsonlite::fromJSON(cont_utf8(out), FALSE)
 }
 
 es_GET_wrap1 <- function(index, which, args=NULL, ...){
@@ -434,35 +433,35 @@ es_GET_wrap1 <- function(index, which, args=NULL, ...){
 es_POST_ <- function(index, which, args=NULL, ...){
   checkconn()
   url <- make_url(es_get_auth())
-  url <- if(is.null(index)) file.path(url, which) else file.path(url, esc(cl(index)), which)
-  tt <- POST(url, query=args, make_up(), ...)
-  if(tt$status_code > 202) stop(content(tt)$error)
-  jsonlite::fromJSON(content(tt, "text"), FALSE)
+  url <- if (is.null(index)) file.path(url, which) else file.path(url, esc(cl(index)), which)
+  tt <- POST(url, query = args, make_up(), es_env$headers, ...)
+  geterror(tt)
+  jsonlite::fromJSON(cont_utf8(tt), FALSE)
 }
 
 e_url <- function(x) paste0(x$base, ":", x$port)
 
 analyze_GET <- function(url, args = NULL, ...){
   checkconn()
-  out <- GET(url, query=args, make_up(), ...)
+  out <- GET(url, query=args, make_up(), es_env$headers, ...)
   stop_for_status(out)
-  tt <- content(out, as = "text")
+  tt <- cont_utf8(out)
   jsonlite::fromJSON(tt)
 }
 
 analyze_POST <- function(url, args = NULL, body, ...){
   checkconn()
   body <- check_inputs(body)
-  out <- POST(url, query=args, body=body, make_up(), ...)
+  out <- POST(url, query=args, body=body, make_up(), es_env$headers, ...)
   stop_for_status(out)
-  tt <- content(out, as = "text")
+  tt <- cont_utf8(out)
   jsonlite::fromJSON(tt)
 }
 
 cc_POST <- function(url, args = NULL, ...){
   checkconn()
-  tt <- POST(url, body=args, encode = "json", make_up(), ...)
+  tt <- POST(url, body=args, encode = "json", make_up(), es_env$headers, ...)
   if(tt$status_code > 202) geterror(tt)
-  res <- content(tt, as = "text")
+  res <- cont_utf8(tt)
   jsonlite::fromJSON(res, FALSE)
 }
