@@ -10,7 +10,7 @@
 #' @param search_path (character) The path to use for searching. Default to \code{_search},
 #' but in some cases you may already have that in the base url set using \code{\link{connect}},
 #' in which case you can set this to \code{NULL}
-#' @seealso  \code{\link{Search_uri}} \code{\link{scroll}} 
+#' @seealso  \code{\link{Search_uri}} \code{\link{Search_template}} \code{\link{scroll}} 
 #' \code{\link{count}} \code{\link{validate}}
 
 Search <- function(index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL, default_operator=NULL,
@@ -19,8 +19,8 @@ Search <- function(index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL, defaul
   analyze_wildcard=NULL, version=FALSE, lenient=FALSE, body=list(), raw=FALSE, asdf=FALSE, scroll=NULL,
   search_path="_search", ...) {
 
-  search_POST(search_path, cl(esc(index)), esc(type),
-    args=ec(list(df=df, analyzer=analyzer, default_operator=default_operator, explain=explain,
+  search_POST(search_path, cl(index), type,
+    args = ec(list(df=df, analyzer=analyzer, default_operator=default_operator, explain=explain,
       `_source`=source, fields=cl(fields), sort=cl(sort), track_scores=track_scores,
       timeout=cn(timeout), terminate_after=cn(terminate_after),
       from=cn(from), size=cn(size), search_type=search_type,
@@ -29,6 +29,12 @@ Search <- function(index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL, defaul
 }
 
 search_POST <- function(path, index=NULL, type=NULL, args, body, raw, asdf, ...) {
+  if (!inherits(raw, "logical")) {
+    stop("'raw' parameter must be `TRUE` or `FALSE`", call. = FALSE)
+  }
+  if (!inherits(asdf, "logical")) {
+    stop("'asdf' parameter must be `TRUE` or `FALSE`", call. = FALSE)
+  }
   checkconn()
   conn <- es_get_auth()
   url <- make_url(conn)

@@ -6,7 +6,7 @@
 #' @param search_path (character) The path to use for searching. Default to \code{_search},
 #' but in some cases you may already have that in the base url set using \code{\link{connect}},
 #' in which case you can set this to \code{NULL}
-#' @seealso \code{\link{Search}} \code{\link{count}}
+#' @seealso \code{\link{Search}} \code{\link{Search_template}} \code{\link{count}}
 
 Search_uri <- function(index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL, default_operator=NULL,
   explain=NULL, source=NULL, fields=NULL, sort=NULL, track_scores=NULL, timeout=NULL,
@@ -14,7 +14,7 @@ Search_uri <- function(index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL, de
   analyze_wildcard=NULL, version=FALSE, lenient=FALSE, raw=FALSE,
   asdf=FALSE, search_path="_search", ...) {
 
-  search_GET(search_path, cl(esc(index)), esc(type),
+  search_GET(search_path, cl(index), type,
     args=ec(list(df=df, analyzer=analyzer, default_operator=default_operator, explain=explain,
       `_source`=source, fields=cl(fields), sort=cl(sort), track_scores=track_scores,
       timeout=cn(timeout), terminate_after=cn(terminate_after),
