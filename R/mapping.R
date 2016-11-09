@@ -10,15 +10,15 @@
 #' @details
 #' Find documentation for each function at:
 #' \itemize{
-#'  \item mapping_create - 
+#'  \item mapping_create -
 #'  \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-put-mapping.html}
-#'  \item type_exists - 
+#'  \item type_exists -
 #'  \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-types-exists.html}
-#'  \item mapping_delete - FUNCTION DEFUNCT - instead of deleting mapping, delete 
+#'  \item mapping_delete - FUNCTION DEFUNCT - instead of deleting mapping, delete
 #'  index and recreate index with new mapping
-#'  \item mapping_get - 
+#'  \item mapping_get -
 #'  \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-mapping.html}
-#'  \item field_mapping_get - 
+#'  \item field_mapping_get -
 #'\url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-field-mapping.html}
 #' }
 #'
@@ -134,10 +134,10 @@ field_mapping_get <- function(index = NULL, type = NULL, field, include_defaults
 #' @rdname mapping
 type_exists <- function(index, type, ...){
   # seems to not work in v1, so don't try cause would give false result
-  if (gsub("\\.", "", ping()$version$number) <= 100) {
+  if (gsub("\\.", "", ping(...)$version$number) <= 100) {
     stop("type exists not available in this ES version", call. = FALSE)
   }
-  checkconn()
+  #checkconn(...)
   url <- make_url(es_get_auth())
   res <- HEAD(file.path(url, esc(index), esc(type)), make_up(), es_env$headers, ...)
   if (res$status_code == 200) TRUE else FALSE

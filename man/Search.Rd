@@ -37,10 +37,15 @@ the hits was computed. Default: \code{FALSE}}
 
 \item{source}{(logical) Set to \code{FALSE} to disable retrieval of the \code{_source}
 field. You can also retrieve part of the document by using \code{_source_include} &
-\code{_source_exclude} (see the \code{body} documentation for more details)}
+\code{_source_exclude} (see the \code{body} documentation for more details). You
+can also include a comma-delimited string of fields from the source document 
+that you want back. See also the \strong{fields} parameter}
 
 \item{fields}{(character) The selective stored fields of the document to return for
-each hit. Not specifying any value will cause no fields to return.}
+each hit. Not specifying any value will cause no fields to return.
+Note that in Elasticsearch v5 and greater, \strong{fields} parameter has changed 
+to \strong{stored_fields}, which is not on by default. You can however, pass 
+fields to \strong{source} parameter}
 
 \item{sort}{(character) Sorting to perform. Can either be in the form of fieldName, or
 \code{fieldName:asc}/\code{fieldName:desc}. The fieldName can either be an actual
@@ -92,12 +97,14 @@ If \code{TRUE}, then raw JSON returned}
 \item{asdf}{(logical) If \code{TRUE}, use \code{\link[jsonlite]{fromJSON}} to parse JSON
 directly to a data.frame. If \code{FALSE} (Default), list output is given.}
 
-\item{scroll}{(character) Specify how long a consistent view of the index should
-be maintained for scrolled search, e.g., "30s", "1m". See \code{\link{units-time}}.}
+\item{scroll}{(character) Specify how long a consistent view of the index 
+should be maintained for scrolled search, e.g., "30s", "1m". See 
+\code{\link{units-time}}.}
 
-\item{search_path}{(character) The path to use for searching. Default to \code{_search},
-but in some cases you may already have that in the base url set using \code{\link{connect}},
-in which case you can set this to \code{NULL}}
+\item{search_path}{(character) The path to use for searching. Default 
+to \code{_search}, but in some cases you may already have that in the base 
+url set using \code{\link{connect}}, in which case you can set this 
+to \code{NULL}}
 
 \item{...}{Curl args passed on to \code{\link[httr]{POST}}}
 }
@@ -123,7 +130,15 @@ Search(index="shakespeare", type="scene")
 Search(index="shakespeare", type="line")
 
 ## Return certain fields
-Search(index="shakespeare", fields=c('play_name','speaker'))
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+  ### ES < v5
+  Search(index="shakespeare", fields=c('play_name','speaker'))
+} else {
+  ### ES > v5
+  Search(index="shakespeare", body = '{
+   "_source": ["play_name", "speaker"]
+  }')
+}
 
 ## Search multiple indices
 Search(index = "gbif")$hits$total
@@ -145,13 +160,18 @@ Search(index="shakespeare", type="act", size = 0, terminate_after = 1)
 
 ## sorting
 Search(index="shakespeare", type="act", sort="text_entry")
-Search(index="shakespeare", type="act", sort="speaker:desc", fields='speaker')
-Search(index="shakespeare", type="act",
- sort=c("speaker:desc","play_name:asc"), fields=c('speaker','play_name'))
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+  Search(index="shakespeare", type="act", sort="speaker:desc", 
+    fields='speaker')
+  Search(index="shakespeare", type="act",
+    sort=c("speaker:desc","play_name:asc"), fields=c('speaker','play_name'))
+}
 
 ## paging
-Search(index="shakespeare", size=1, fields='text_entry')$hits$hits
-Search(index="shakespeare", size=1, from=1, fields='text_entry')$hits$hits
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+  Search(index="shakespeare", size=1, fields='text_entry')$hits$hits
+  Search(index="shakespeare", size=1, from=1, fields='text_entry')$hits$hits
+}
 
 ## queries
 ### Search in all fields
@@ -239,6 +259,7 @@ Search(index="shakespeare", body=aggs)
 ## or pass in collapsed json string
 aggs <- '{"aggs":{"stats":{"terms":{"field":"text_entry"}}}}'
 Search(index="shakespeare", body=aggs)
+
 
 ## Aggregations
 ### Histograms
@@ -399,7 +420,7 @@ Search('gbif', body=body)$hits$total
 body <- '{
  "query": {
    "more_like_this": {
-     "fields": ["abstract","title"],
+     "fields": ["title"],
      "like_text": "and then",
      "min_term_freq": 1,
      "max_query_terms": 12
@@ -453,10 +474,12 @@ Search('shakespeare', 'line', body=body)
 ## Scrolling search - instead of paging
 Search('shakespeare', q="a*")$hits$total
 res <- Search(index = 'shakespeare', q="a*", scroll="1m")
-res <- Search(index = 'shakespeare', q="a*", scroll="1m", search_type = "scan")
+res <- Search(index = 'shakespeare', q="a*", scroll="1m", 
+  search_type = "scan")
 scroll(scroll_id = res$`_scroll_id`)
 
-res <- Search(index = 'shakespeare', q="a*", scroll="5m", search_type = "scan")
+res <- Search(index = 'shakespeare', q="a*", scroll="5m", 
+  search_type = "scan")
 out <- list()
 hits <- 1
 while(hits != 0){
@@ -465,6 +488,61 @@ while(hits != 0){
   if(hits > 0)
     out <- c(out, res$hits$hits)
 }
+
+### Sliced scrolling
+#### For scroll queries that return a lot of documents it is possible to 
+#### split the scroll in multiple slices which can be consumed independently
+body1 <- '{
+  "slice": {
+    "id": 0, 
+    "max": 2 
+  },
+  "query": {
+    "match" : {
+      "text_entry" : "a*"
+    }
+  }
+}'
+
+body2 <- '{
+  "slice": {
+    "id": 1, 
+    "max": 2 
+  },
+  "query": {
+    "match" : {
+      "text_entry" : "a*"
+    }
+  }
+}'
+
+res1 <- Search(index = 'shakespeare', scroll="1m", body = body1)
+res2 <- Search(index = 'shakespeare', scroll="1m", body = body2)
+scroll(scroll_id = res1$`_scroll_id`)
+scroll(scroll_id = res2$`_scroll_id`)
+
+out1 <- list()
+hits <- 1
+while(hits != 0){
+  tmp1 <- scroll(scroll_id = res1$`_scroll_id`)
+  hits <- length(tmp1$hits$hits)
+  if(hits > 0)
+    out1 <- c(out1, tmp1$hits$hits)
+}
+
+out2 <- list()
+hits <- 1
+while(hits != 0){
+  tmp2 <- scroll(scroll_id = res2$`_scroll_id`)
+  hits <- length(tmp2$hits$hits)
+  if(hits > 0)
+    out2 <- c(out2, tmp2$hits$hits)
+}
+
+c(
+ lapply(out1, "[[", "_source"),
+ lapply(out2, "[[", "_source")
+) 
 
 
 
@@ -484,8 +562,8 @@ body <- '{
 Search('gbif', body = body)$hits$total
 
 ## Geo filters - fun!
-### Note that filers have many geospatial filter options, but queries have fewer, and
-### require a geo_shape mapping
+### Note that filers have many geospatial filter options, but queries 
+### have fewer, andrequire a geo_shape mapping
 
 body <- '{
  "mappings": {
@@ -739,7 +817,7 @@ x$hits$total
 \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html}
 }
 \seealso{
-\code{\link{Search_uri}} \code{\link{Search_template}} \code{\link{scroll}} 
-\code{\link{count}} \code{\link{validate}}
+\code{\link{Search_uri}} \code{\link{Search_template}} 
+\code{\link{scroll}} \code{\link{count}} \code{\link{validate}}
 }
 
