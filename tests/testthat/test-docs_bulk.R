@@ -14,7 +14,7 @@ test_that("docs_bulk - works with bulk format file", {
   
   expect_is(a, "list")
   expect_named(a, c('took', 'errors', 'items'))
-  expect_equal(length(a$items), 2)
+  expect_equal(length(a$items), 3)
   expect_equal(a$items[[1]]$index$`_index`, "gbifnewgeo")
 })
 
@@ -66,4 +66,76 @@ test_that("docs_bulk fails as expected", {
   
   # character string has to be a file that exists on disk
   expect_error(docs_bulk("adfadf"), "file.exists\\(x\\) is not TRUE")
+})
+
+
+test_that("dataset with NA's", {
+  # data.frame
+  # remove index if it exists
+  if (index_exists("mtcars")) {
+    index_delete("mtcars")
+  }
+  test1 <- mtcars
+  row.names(test1) <- NULL
+  test1[] <- lapply(test1, function(x) {
+    n <- sample(seq_len(NROW(test1)), size = sample(seq_len(NROW(test1))))
+    x[n] <- NA
+    x
+  })
+  res <- invisible(docs_bulk(test1, "mtcars", "mtcars"))
+  
+  expect_is(res, "list")
+  expect_is(res[[1]]$items[[1]], "list")
+  
+  Sys.sleep(2)
+  out <- Search("mtcars", asdf = TRUE)$hits$hits
+  expect_is(out, "data.frame")
+  expect_true(any(is.na(out)))
+  
+  # list
+  # remove index if it exists
+  if (index_exists("mtcars")) {
+    index_delete("mtcars")
+  }
+  test2 <- mtcars
+  row.names(test2) <- NULL
+  test2[] <- lapply(test2, function(x) {
+    n <- sample(seq_len(NROW(test2)), size = sample(seq_len(NROW(test2))))
+    x[n] <- NA
+    x
+  })
+  mtcarslist <- apply(test2, 1, as.list)
+  res <- invisible(docs_bulk(mtcarslist, "mtcars", "mtcars"))
+  
+  expect_is(res, "list")
+  expect_is(res[[1]]$items[[1]], "list")
+  
+  Sys.sleep(2)
+  out <- Search("mtcars", asdf = TRUE)$hits$hits
+  expect_is(out, "data.frame")
+  expect_true(any(is.na(out)))
+  
+  # file
+  # remove index if it exists
+  if (index_exists("mtcars")) {
+    index_delete("mtcars")
+  }
+  test3 <- mtcars
+  row.names(test3) <- NULL
+  test3[] <- lapply(test3, function(x) {
+    n <- sample(seq_len(NROW(test3)), size = sample(seq_len(NROW(test3))))
+    x[n] <- NA
+    x
+  })
+  tfile <- tempfile(pattern = "mtcars_file", fileext = ".json")
+  res <- invisible(docs_bulk_prep(test3, "mtcars", path = tfile))
+  res <- invisible(docs_bulk(res))
+  
+  expect_is(res, "list")
+  expect_is(res$items[[1]], "list")
+  
+  Sys.sleep(2)
+  out <- Search("mtcars", asdf = TRUE)$hits$hits
+  expect_is(out, "data.frame")
+  expect_true(any(is.na(out)))
 })

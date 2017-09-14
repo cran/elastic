@@ -6,7 +6,7 @@ elastic
 [![Build Status](https://api.travis-ci.org/ropensci/elastic.svg)](https://travis-ci.org/ropensci/elastic)
 [![rstudio mirror downloads](http://cranlogs.r-pkg.org/badges/elastic?color=E664A4)](https://github.com/metacran/cranlogs.app)
 [![cran version](http://www.r-pkg.org/badges/version/elastic)](https://cran.r-project.org/package=elastic)
-<!-- [![codecov.io](https://codecov.io/github/ropensci/elastic/coverage.svg?branch=master)](https://codecov.io/github/ropensci/elastic?branch=master) -->
+[![codecov.io](https://codecov.io/github/ropensci/elastic/coverage.svg?branch=master)](https://codecov.io/github/ropensci/elastic?branch=master)
 <!-- [![Build status](https://ci.appveyor.com/api/projects/status/swmmw758mf1heoj2/branch/master)](https://ci.appveyor.com/project/sckott/elastic/branch/master) -->
 
 **A general purpose R interface to [Elasticsearch](https://www.elastic.co/products/elasticsearch)**
@@ -23,7 +23,7 @@ Also check out `elasticdsl` - an R DSL for Elasticsearch - [https://github.com/r
 
 ## Compatibility
 
-This client is developed following the latest stable releases, currently `v5.0.0`. It is generally compatible with older versions of Elasticsearch. Unlike the [Python client](https://github.com/elastic/elasticsearch-py#compatibility), we try to keep as much compatibility as possible within a single version of this client, as that's an easier setup in R world.
+This client is developed following the latest stable releases, currently `v5.6.0`. It is generally compatible with older versions of Elasticsearch. Unlike the [Python client](https://github.com/elastic/elasticsearch-py#compatibility), we try to keep as much compatibility as possible within a single version of this client, as that's an easier setup in R world.
 
 ## Security
 
@@ -78,12 +78,12 @@ If you're using boot2docker, you'll need to use the IP address in place of local
 
 __on OSX__
 
-+ Download zip or tar file from Elasticsearch [see here for download](https://www.elastic.co/downloads), e.g., `curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.0.0.tar.gz`
-+ Extract: `tar -zxvf elasticsearch-5.0.0.tar.gz`
-+ Move it: `sudo mv elasticsearch-5.0.0 /usr/local` (replace version with your version)
++ Download zip or tar file from Elasticsearch [see here for download](https://www.elastic.co/downloads), e.g., `curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.0.tar.gz`
++ Extract: `tar -zxvf elasticsearch-5.6.0.tar.gz`
++ Move it: `sudo mv elasticsearch-5.6.0 /usr/local`
 + Navigate to /usr/local: `cd /usr/local`
 + Delete symlinked `elasticsearch` directory: `rm -rf elasticsearch`
-+ Add shortcut: `sudo ln -s elasticsearch-5.0.0 elasticsearch` (replace version with your version)
++ Add shortcut: `sudo ln -s elasticsearch-5.6.0 elasticsearch` (replace version with your version)
 
 You can also install via Homebrew: `brew install elasticsearch`
 
@@ -121,7 +121,7 @@ Then load the data into Elasticsearch:
 
 
 ```r
-docs_bulk(shakespeare)
+invisible(docs_bulk(shakespeare))
 ```
 
 If you need some big data to play with, the shakespeare dataset is a good one to start with. You can get the whole thing and pop it into Elasticsearch (beware, may take up to 10 minutes or so.):
@@ -138,7 +138,7 @@ A dataset inluded in the `elastic` package is metadata for PLOS scholarly articl
 
 ```r
 plosdat <- system.file("examples", "plos_data.json", package = "elastic")
-docs_bulk(plosdat)
+invisible(docs_bulk(plosdat))
 ```
 
 ### Global Biodiversity Information Facility (GBIF) data
@@ -148,7 +148,7 @@ A dataset inluded in the `elastic` package is data for GBIF species occurrence r
 
 ```r
 gbifdat <- system.file("examples", "gbif_data.json", package = "elastic")
-docs_bulk(gbifdat)
+invisible(docs_bulk(gbifdat))
 ```
 
 GBIF geo data with a coordinates element to allow `geo_shape` queries
@@ -156,7 +156,7 @@ GBIF geo data with a coordinates element to allow `geo_shape` queries
 
 ```r
 gbifgeo <- system.file("examples", "gbif_geo.json", package = "elastic")
-docs_bulk(gbifgeo)
+invisible(docs_bulk(gbifgeo))
 ```
 
 ### More data sets
@@ -178,6 +178,22 @@ connect(es_port = 9200)
 #> password:   <secret> 
 #> errors:     simple 
 #> headers (names):  NULL
+```
+
+For AWS hosted elasticsearch, make sure to specify es_path = "" and the correct port - transport schema pair.
+
+
+```r
+connect(es_host = <aws_es_endpoint>, es_path = "", es_port = 80, es_transport_schema  = "http")
+  # or
+connect(es_host = <aws_es_endpoint>, es_path = "", es_port = 443, es_transport_schema  = "https")
+```
+
+If you are using Elastic Cloud or an installation with authentication (X-pack), make sure to specify es_path = "", es_user = "", es_pwd = "" and the correct port - transport schema pair.
+
+
+```r
+connect(es_host = <ec_endpoint>, es_path = "", es_user="test", es_pwd = "1234", es_port = 9243, es_transport_schema  = "https")
 ```
 
 ## Search
@@ -208,11 +224,11 @@ Search(index = "plos", size = 1)$hits$hits
 #> [1] "Phospholipase C-β4 Is Essential for the Progression of the Normal Sleep Sequence and Ultradian Body Temperature Rhythms in Mice"
 ```
 
-Search the `plos` index, and the `article` document type, sort by title, and query for _antibody_, limit to 1 result
+Search the `plos` index, and the `article` document type, and query for _antibody_, limit to 1 result
 
 
 ```r
-Search(index = "plos", type = "article", sort = "title", q = "antibody", size = 1)$hits$hits
+Search(index = "plos", type = "article", q = "antibody", size = 1)$hits$hits
 #> [[1]]
 #> [[1]]$`_index`
 #> [1] "plos"
@@ -224,7 +240,7 @@ Search(index = "plos", type = "article", sort = "title", q = "antibody", size = 
 #> [1] "568"
 #> 
 #> [[1]]$`_score`
-#> NULL
+#> [1] 4.165291
 #> 
 #> [[1]]$`_source`
 #> [[1]]$`_source`$id
@@ -232,11 +248,6 @@ Search(index = "plos", type = "article", sort = "title", q = "antibody", size = 
 #> 
 #> [[1]]$`_source`$title
 #> [1] "Evaluation of 131I-Anti-Angiotensin II Type 1 Receptor Monoclonal Antibody as a Reporter for Hepatocellular Carcinoma"
-#> 
-#> 
-#> [[1]]$sort
-#> [[1]]$sort[[1]]
-#> [1] "1"
 ```
 
 ## Get documents
@@ -288,11 +299,6 @@ docs_get(index = 'plos', type = 'article', id = 4, fields = 'id')
 #> 
 #> $found
 #> [1] TRUE
-#> 
-#> $fields
-#> $fields$id
-#> $fields$id[[1]]
-#> [1] "10.1371/journal.pone.0107758"
 ```
 
 

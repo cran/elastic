@@ -21,7 +21,7 @@ make_bulk <- function(df, index, type, counter, es_ids, path = NULL) {
     type,
     counter
   )
-  data <- jsonlite::toJSON(df, collapse = FALSE)
+  data <- jsonlite::toJSON(df, collapse = FALSE, na = "null", auto_unbox = TRUE)
   tmpf <- if (is.null(path)) tempfile("elastic__") else path
   writeLines(paste(metadata, data, sep = "\n"), tmpf)
   invisible(tmpf)
@@ -29,7 +29,7 @@ make_bulk <- function(df, index, type, counter, es_ids, path = NULL) {
 
 shift_start <- function(vals, index, type = NULL) {
   num <- tryCatch(count(index, type), error = function(e) e)
-  if (is(num, "error")) {
+  if (inherits(num, "error")) {
     vals
   } else {
     vals + num
@@ -40,7 +40,8 @@ check_doc_ids <- function(x, ids) {
   if (!is.null(ids)) {
     # check class type
     if (!class(ids) %in% c('character', 'factor', 'numeric', 'integer')) {
-      stop("doc_ids must be of class character, numeric or integer", call. = FALSE)
+      stop("doc_ids must be of class character, numeric or integer", 
+           call. = FALSE)
     }
     
     # check appropriate length
@@ -51,9 +52,9 @@ check_doc_ids <- function(x, ids) {
 }
 
 has_ids <- function(x) {
-  if (is(x, "data.frame")) {
+  if (inherits(x, "data.frame")) {
     "id" %in% names(x)
-  } else if (is(x, "list")) {
+  } else if (inherits(x, "list")) {
     ids <- ec(sapply(x, "[[", "id"))
     if (length(ids) > 0) {
       tmp <- length(ids) == length(x)
@@ -68,7 +69,8 @@ has_ids <- function(x) {
 
 close_conns <- function() {
   cons <- showConnections()
-  ours <- as.integer(rownames(cons)[grepl("/elastic__", cons[, "description"], fixed = TRUE)])
+  ours <- as.integer(rownames(cons)[grepl("/elastic__", cons[, "description"], 
+                                          fixed = TRUE)])
   for (i in ours) {
     close(getConnection(i))
   }
@@ -76,7 +78,7 @@ close_conns <- function() {
 
 check_named_vectors <- function(x) {
   lapply(x, function(z) {
-    if (!is(z, "list")) {
+    if (!inherits(z, "list")) {
       as.list(z)
     } else {
       z

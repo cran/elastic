@@ -9,21 +9,21 @@ Search_uri(index = NULL, type = NULL, q = NULL, df = NULL,
   source = NULL, fields = NULL, sort = NULL, track_scores = NULL,
   timeout = NULL, terminate_after = NULL, from = NULL, size = NULL,
   search_type = NULL, lowercase_expanded_terms = NULL,
-  analyze_wildcard = NULL, version = FALSE, lenient = FALSE,
-  raw = FALSE, asdf = FALSE, search_path = "_search", ...)
+  analyze_wildcard = NULL, version = NULL, lenient = FALSE, raw = FALSE,
+  asdf = FALSE, search_path = "_search", stream_opts = list(), ...)
 }
 \arguments{
 \item{index}{Index name, one or more}
 
 \item{type}{Document type}
 
-\item{q}{The query string (maps to the query_string query, see Query String Query
-for more details). See 
+\item{q}{The query string (maps to the query_string query, see Query String 
+Query for more details). See 
 https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
 for documentation and examples.}
 
-\item{df}{(character) The default field to use when no field prefix is defined
-within the query.}
+\item{df}{(character) The default field to use when no field prefix is 
+defined within the query.}
 
 \item{analyzer}{(character) The analyzer name to be used when analyzing the
 query string.}
@@ -31,73 +31,85 @@ query string.}
 \item{default_operator}{(character) The default operator to be used, can be
 \code{AND} or \code{OR}. Default: \code{OR}}
 
-\item{explain}{(logical) For each hit, contain an explanation of how scoring of
-the hits was computed. Default: \code{FALSE}}
+\item{explain}{(logical) For each hit, contain an explanation of how 
+scoring of the hits was computed. Default: \code{FALSE}}
 
-\item{source}{(logical) Set to \code{FALSE} to disable retrieval of the \code{_source}
-field. You can also retrieve part of the document by using \code{_source_include} &
-\code{_source_exclude} (see the \code{body} documentation for more details). You
-can also include a comma-delimited string of fields from the source document 
-that you want back. See also the \strong{fields} parameter}
+\item{source}{(logical) Set to \code{FALSE} to disable retrieval of the 
+\code{_source} field. You can also retrieve part of the document by 
+using \code{_source_include} & \code{_source_exclude} (see the \code{body} 
+documentation for more details). You can also include a comma-delimited 
+string of fields from the source document that you want back. See also 
+the \strong{fields} parameter}
 
-\item{fields}{(character) The selective stored fields of the document to return for
-each hit. Not specifying any value will cause no fields to return.
-Note that in Elasticsearch v5 and greater, \strong{fields} parameter has changed 
-to \strong{stored_fields}, which is not on by default. You can however, pass 
-fields to \strong{source} parameter}
+\item{fields}{(character) The selective stored fields of the document to 
+return for each hit. Not specifying any value will cause no fields to return.
+Note that in Elasticsearch v5 and greater, \strong{fields} parameter has 
+changed to \strong{stored_fields}, which is not on by default. You can 
+however, pass fields to \strong{source} parameter}
 
-\item{sort}{(character) Sorting to perform. Can either be in the form of fieldName, or
-\code{fieldName:asc}/\code{fieldName:desc}. The fieldName can either be an actual
-field within the document, or the special \code{_score} name to indicate sorting based on
-scores. There can be several sort parameters (order is important).}
+\item{sort}{(character) Sorting to perform. Can either be in the form of 
+fieldName, or \code{fieldName:asc}/\code{fieldName:desc}. The fieldName 
+can either be an actual field within the document, or the special 
+\code{_score} name to indicate sorting based on scores. There can be several 
+sort parameters (order is important).}
 
-\item{track_scores}{(logical) When sorting, set to \code{TRUE} in order to still track scores
-and return them as part of each hit.}
+\item{track_scores}{(logical) When sorting, set to \code{TRUE} in order to 
+still track scores and return them as part of each hit.}
 
-\item{timeout}{(numeric) A search timeout, bounding the search request to be executed
-within the specified time value and bail with the hits accumulated up to that point
-when expired. Default: no timeout.}
+\item{timeout}{(numeric) A search timeout, bounding the search request to 
+be executed within the specified time value and bail with the hits 
+accumulated up to that point when expired. Default: no timeout.}
 
-\item{terminate_after}{(numeric) The maximum number of documents to collect for each
-shard, upon reaching which the query execution will terminate early. If set, the
-response will have a boolean field terminated_early to indicate whether the query
-execution has actually terminated_early. Defaults to no terminate_after.}
+\item{terminate_after}{(numeric) The maximum number of documents to collect 
+for each shard, upon reaching which the query execution will terminate 
+early. If set, the response will have a boolean field terminated_early to 
+indicate whether the query execution has actually terminated_early. 
+Default: no terminate_after}
 
-\item{from}{(character) The starting from index of the hits to return. Pass in as a
-character string to avoid problems with large number conversion to scientific
-notation. Default: 0}
+\item{from}{(character) The starting from index of the hits to return. 
+Pass in as a character string to avoid problems with large number 
+conversion to scientific notation. Default: 0}
 
-\item{size}{(character) The number of hits to return. Pass in as a character string
-to avoid problems with large number conversion to scientific notation. Default: 10.
-The default maximum is 10,000 - however, you can change this default maximum by
-changing the \code{index.max_result_window} index level parameter.}
+\item{size}{(character) The number of hits to return. Pass in as a 
+character string to avoid problems with large number conversion to 
+scientific notation. Default: 10. The default maximum is 10,000 - however, 
+you can change this default maximum by changing the 
+\code{index.max_result_window} index level parameter.}
 
-\item{search_type}{(character) The type of the search operation to perform. Can be
-\code{query_then_fetch} (default) or \code{dfs_query_then_fetch}. Types \code{scan} and
-\code{count} are deprecated. See \url{http://bit.ly/19Am9xP} for more details on the
-different types of search that can be performed.}
+\item{search_type}{(character) The type of the search operation to perform. 
+Can be \code{query_then_fetch} (default) or \code{dfs_query_then_fetch}. 
+Types \code{scan} and \code{count} are deprecated. 
+See \url{http://bit.ly/19Am9xP} for more details on the different types of 
+search that can be performed.}
 
-\item{lowercase_expanded_terms}{(logical) Should terms be automatically lowercased or not.
-Default: \code{TRUE}.}
+\item{lowercase_expanded_terms}{(logical) Should terms be automatically 
+lowercased or not. Default: \code{TRUE}.}
 
-\item{analyze_wildcard}{(logical) Should wildcard and prefix queries be analyzed or not.
-Default: \code{FALSE}.}
+\item{analyze_wildcard}{(logical) Should wildcard and prefix queries be 
+analyzed or not. Default: \code{FALSE}.}
 
 \item{version}{(logical) Print the document version with each document.}
 
-\item{lenient}{If \code{TRUE} will cause format based failures (like providing text to
-a numeric field) to be ignored. Default: \code{FALSE}}
+\item{lenient}{If \code{TRUE} will cause format based failures (like 
+providing text to a numeric field) to be ignored. Default: \code{FALSE}}
 
 \item{raw}{(logical) If \code{FALSE} (default), data is parsed to list. 
 If \code{TRUE}, then raw JSON returned}
 
-\item{asdf}{(logical) If \code{TRUE}, use \code{\link[jsonlite]{fromJSON}} to parse JSON
-directly to a data.frame. If \code{FALSE} (Default), list output is given.}
+\item{asdf}{(logical) If \code{TRUE}, use \code{\link[jsonlite]{fromJSON}} 
+to parse JSON directly to a data.frame. If \code{FALSE} (Default), list 
+output is given.}
 
 \item{search_path}{(character) The path to use for searching. Default
 to \code{_search}, but in some cases you may already have that in the base
 url set using \code{\link{connect}}, in which case you can set this
 to \code{NULL}}
+
+\item{stream_opts}{(list) A list of options passed to 
+\code{\link[jsonlite]{stream_out}} - Except that you can't pass \code{x} as 
+that's the data that's streamed out, and pass a file path instead of a 
+connection to \code{con}. \code{pagesize} param doesn't do much as 
+that's more or less controlled by paging with ES.}
 
 \item{...}{Curl args passed on to \code{\link[httr]{POST}}}
 }
@@ -113,7 +125,13 @@ Search_uri(index="shakespeare", type="scene")
 Search_uri(index="shakespeare", type="line")
 
 ## Return certain fields
-Search_uri(index="shakespeare", fields=c('play_name','speaker'))
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+  ### ES < v5
+  Search_uri(index="shakespeare", fields=c('play_name','speaker'))
+} else {
+  ### ES > v5
+  Search_uri(index="shakespeare", source=c('play_name','speaker'))
+}
 
 ## Search many indices
 Search_uri(index = "gbif")$hits$total
@@ -121,6 +139,7 @@ Search_uri(index = "shakespeare")$hits$total
 Search_uri(index = c("gbif", "shakespeare"))$hits$total
 
 ## search_type
+## NOTE: If you're in ES V5 or greater, see \\code{?fielddata}
 Search_uri(index="shakespeare", search_type = "query_then_fetch")
 Search_uri(index="shakespeare", search_type = "dfs_query_then_fetch")
 # Search_uri(index="shakespeare", search_type = "scan") # only when scrolling
@@ -194,13 +213,19 @@ Search_uri(index="shakespeare", version=TRUE, size=2)
 ## Get raw data
 Search_uri(index="shakespeare", type="scene", raw=TRUE)
 
-## Curl debugging
+## Curl options
 library('httr')
+
+### verbose
 out <- Search_uri(index="shakespeare", type="line", config=verbose())
+
+### print progress
+res <- Search_uri(config = progress(), size = 5000)
 }
 }
 \seealso{
-\code{\link{Search}} \code{\link{Search_template}}
-\code{\link{count}}
-}
+\code{\link{fielddata}}
 
+\code{\link{Search}} \code{\link{Search_template}}
+\code{\link{count}} \code{\link{fielddata}}
+}

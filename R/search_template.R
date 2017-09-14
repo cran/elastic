@@ -28,6 +28,8 @@
 #' extension. In order to execute the stored template, reference it 
 #' by it's name under the template key, like 
 #' \code{"file": "templateName", ...}
+#' 
+#' @references \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/search-template.html}
 #'
 #' @examples \dontrun{
 #' if (!index_exists("iris")) {
@@ -102,22 +104,25 @@
 #' }
 Search_template <- function(body = list(), raw = FALSE, ...) {
   # search template render added in Elasticsearch v1.1, stop if version pre that
-  if (gsub("\\.", "", ping(...)$version$number) < 110) {
+  if (es_ver() < 110) {
     stop("search template not available in this ES version", call. = FALSE)
   }
-  search_POST("_search/template", args = list(), body = body, raw = raw, asdf = FALSE, ...)
+  search_POST("_search/template", args = list(), body = body, raw = raw, 
+              asdf = FALSE, stream_opts = list(), ...)
 }
 
 #' @export
 #' @rdname Search_template
-Search_template_register <- function(template, body = list(), raw = FALSE, ...) {
+Search_template_register <- function(template, body = list(), raw = FALSE, 
+                                     ...) {
   # search template render added in Elasticsearch v1.1, stop if version pre that
-  if (gsub("\\.", "", ping(...)$version$number) < 110) {
+  if (es_ver() < 110) {
     stop("search template not available in this ES version", call. = FALSE)
   }
   search_POST(
     paste0("_search/template/", template),
-    args = list(), body = body, raw = raw, asdf = FALSE, ...
+    args = list(), body = body, raw = raw, asdf = FALSE, 
+    stream_opts = list(), ...
   )
 }
 
@@ -125,7 +130,7 @@ Search_template_register <- function(template, body = list(), raw = FALSE, ...) 
 #' @rdname Search_template
 Search_template_get <- function(template, ...) {
   # search template render added in Elasticsearch v1.1, stop if version pre that
-  if (gsub("\\.", "", ping(...)$version$number) < 110) {
+  if (es_ver() < 110) {
     stop("search template not available in this ES version", call. = FALSE)
   }
   url <- make_url(es_get_auth())
@@ -137,7 +142,7 @@ Search_template_get <- function(template, ...) {
 #' @rdname Search_template
 Search_template_delete <- function(template, ...) {
   # search template render added in Elasticsearch v1.1, stop if version pre that
-  if (gsub("\\.", "", ping(...)$version$number) < 110) {
+  if (es_ver() < 110) {
     stop("search template not available in this ES version", call. = FALSE)
   }
   url <- make_url(es_get_auth())
@@ -149,8 +154,9 @@ Search_template_delete <- function(template, ...) {
 #' @rdname Search_template
 Search_template_render <- function(body = list(), raw = FALSE, ...) {
   # search template render added in Elasticsearch v2.0, stop if version pre that
-  if (gsub("\\.", "", ping(...)$version$number) < 200) {
+  if (es_ver() < 200) {
     stop("render template not available in this ES version", call. = FALSE)
   }
-  search_POST("_render/template", args = list(), body = body, raw = raw, asdf = FALSE, ...)
+  search_POST("_render/template", args = list(), body = body, raw = raw, 
+              asdf = FALSE, stream_opts = list(), ...)
 }

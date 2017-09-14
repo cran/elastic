@@ -42,10 +42,10 @@ body <- '{
 }'
 if (index_exists('test1')) index_delete('test1')
 tokenizer_set(index = "test1", body=body)
-index_analyze(text = "hello world", index = "test1", analyzer='my_ngram_analyzer')
+index_analyze(text = "hello world", index = "test1", 
+  analyzer='my_ngram_analyzer')
 }
 }
 \author{
 Scott Chamberlain <myrmecocystus@gmail.com>
 }
-

@@ -43,6 +43,11 @@ if (!index_exists("plos")) {
 }
 
 # delete a document
+if (!docs_get(index='plos', type='article', id=36, exists=TRUE)) {
+  docs_create(index='plos', type='article', id=36, 
+    body = list(id="12345", title="New title")
+  )
+}
 docs_get(index='plos', type='article', id=36)
 docs_delete(index='plos', type='article', id=36)
 # docs_get(index='plos', type='article', id=36) # and the document is gone
@@ -51,4 +56,3 @@ docs_delete(index='plos', type='article', id=36)
 \references{
 \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-delete.html}
 }
-

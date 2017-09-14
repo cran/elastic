@@ -75,26 +75,27 @@ termvectors <- function(index, type, id = NULL, body = list(), pretty = TRUE,
   routing = NULL, term_statistics = FALSE, version = NULL,
   version_type = NULL, ...) {
 
-  args <- ec(list(pretty = pretty, realtime = realtime, preference = preference,
-            routing = routing, version = version, version_type = version_type))
+  args <- ec(list(pretty = as_log(pretty), realtime = as_log(realtime), 
+                  preference = preference, routing = routing, 
+                  version = version, version_type = version_type))
   if (length(body) == 0) {
     body <- ec(list(fields = fields, field_statistics = field_statistics,
                     offsets = offsets, parent = parent, payloads = payloads,
                     positions = positions, term_statistics = term_statistics))
   }
   tv_POST(
-    if (gsub("\\.", "", ping(...)$version$number) > 200) "_termvectors" else "_termvector",
+    if (es_ver() > 200) "_termvectors" else "_termvector",
     index, type, id, args, body, ...
   )
 }
 
 # helpers ------------------------
 tv_POST <- function(path, index, type, id, args, body, ...) {
-  #checkconn(...)
   url <- make_url(es_get_auth())
   url <- construct_url(url, path, index, type, id)
   tt <- httr::POST(url, query = args, body = body,
-                   encode = "json", make_up(), es_env$headers, ...)
+                   encode = "json", make_up(), content_type_json(), 
+                   es_env$headers, ...)
   geterror(tt)
   jsonlite::fromJSON(cont_utf8(tt), FALSE)
 }

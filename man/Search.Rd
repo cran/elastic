@@ -9,22 +9,22 @@ Search(index = NULL, type = NULL, q = NULL, df = NULL,
   source = NULL, fields = NULL, sort = NULL, track_scores = NULL,
   timeout = NULL, terminate_after = NULL, from = NULL, size = NULL,
   search_type = NULL, lowercase_expanded_terms = NULL,
-  analyze_wildcard = NULL, version = FALSE, lenient = FALSE,
-  body = list(), raw = FALSE, asdf = FALSE, scroll = NULL,
-  search_path = "_search", ...)
+  analyze_wildcard = NULL, version = NULL, lenient = FALSE,
+  body = list(), raw = FALSE, asdf = FALSE, time_scroll = NULL,
+  search_path = "_search", stream_opts = list(), ...)
 }
 \arguments{
 \item{index}{Index name, one or more}
 
 \item{type}{Document type}
 
-\item{q}{The query string (maps to the query_string query, see Query String Query
-for more details). See 
+\item{q}{The query string (maps to the query_string query, see Query String 
+Query for more details). See 
 https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
 for documentation and examples.}
 
-\item{df}{(character) The default field to use when no field prefix is defined
-within the query.}
+\item{df}{(character) The default field to use when no field prefix is 
+defined within the query.}
 
 \item{analyzer}{(character) The analyzer name to be used when analyzing the
 query string.}
@@ -32,79 +32,91 @@ query string.}
 \item{default_operator}{(character) The default operator to be used, can be
 \code{AND} or \code{OR}. Default: \code{OR}}
 
-\item{explain}{(logical) For each hit, contain an explanation of how scoring of
-the hits was computed. Default: \code{FALSE}}
+\item{explain}{(logical) For each hit, contain an explanation of how 
+scoring of the hits was computed. Default: \code{FALSE}}
 
-\item{source}{(logical) Set to \code{FALSE} to disable retrieval of the \code{_source}
-field. You can also retrieve part of the document by using \code{_source_include} &
-\code{_source_exclude} (see the \code{body} documentation for more details). You
-can also include a comma-delimited string of fields from the source document 
-that you want back. See also the \strong{fields} parameter}
+\item{source}{(logical) Set to \code{FALSE} to disable retrieval of the 
+\code{_source} field. You can also retrieve part of the document by 
+using \code{_source_include} & \code{_source_exclude} (see the \code{body} 
+documentation for more details). You can also include a comma-delimited 
+string of fields from the source document that you want back. See also 
+the \strong{fields} parameter}
 
-\item{fields}{(character) The selective stored fields of the document to return for
-each hit. Not specifying any value will cause no fields to return.
-Note that in Elasticsearch v5 and greater, \strong{fields} parameter has changed 
-to \strong{stored_fields}, which is not on by default. You can however, pass 
-fields to \strong{source} parameter}
+\item{fields}{(character) The selective stored fields of the document to 
+return for each hit. Not specifying any value will cause no fields to return.
+Note that in Elasticsearch v5 and greater, \strong{fields} parameter has 
+changed to \strong{stored_fields}, which is not on by default. You can 
+however, pass fields to \strong{source} parameter}
 
-\item{sort}{(character) Sorting to perform. Can either be in the form of fieldName, or
-\code{fieldName:asc}/\code{fieldName:desc}. The fieldName can either be an actual
-field within the document, or the special \code{_score} name to indicate sorting based on
-scores. There can be several sort parameters (order is important).}
+\item{sort}{(character) Sorting to perform. Can either be in the form of 
+fieldName, or \code{fieldName:asc}/\code{fieldName:desc}. The fieldName 
+can either be an actual field within the document, or the special 
+\code{_score} name to indicate sorting based on scores. There can be several 
+sort parameters (order is important).}
 
-\item{track_scores}{(logical) When sorting, set to \code{TRUE} in order to still track scores
-and return them as part of each hit.}
+\item{track_scores}{(logical) When sorting, set to \code{TRUE} in order to 
+still track scores and return them as part of each hit.}
 
-\item{timeout}{(numeric) A search timeout, bounding the search request to be executed
-within the specified time value and bail with the hits accumulated up to that point
-when expired. Default: no timeout.}
+\item{timeout}{(numeric) A search timeout, bounding the search request to 
+be executed within the specified time value and bail with the hits 
+accumulated up to that point when expired. Default: no timeout.}
 
-\item{terminate_after}{(numeric) The maximum number of documents to collect for each
-shard, upon reaching which the query execution will terminate early. If set, the
-response will have a boolean field terminated_early to indicate whether the query
-execution has actually terminated_early. Defaults to no terminate_after.}
+\item{terminate_after}{(numeric) The maximum number of documents to collect 
+for each shard, upon reaching which the query execution will terminate 
+early. If set, the response will have a boolean field terminated_early to 
+indicate whether the query execution has actually terminated_early. 
+Default: no terminate_after}
 
-\item{from}{(character) The starting from index of the hits to return. Pass in as a
-character string to avoid problems with large number conversion to scientific
-notation. Default: 0}
+\item{from}{(character) The starting from index of the hits to return. 
+Pass in as a character string to avoid problems with large number 
+conversion to scientific notation. Default: 0}
 
-\item{size}{(character) The number of hits to return. Pass in as a character string
-to avoid problems with large number conversion to scientific notation. Default: 10.
-The default maximum is 10,000 - however, you can change this default maximum by
-changing the \code{index.max_result_window} index level parameter.}
+\item{size}{(character) The number of hits to return. Pass in as a 
+character string to avoid problems with large number conversion to 
+scientific notation. Default: 10. The default maximum is 10,000 - however, 
+you can change this default maximum by changing the 
+\code{index.max_result_window} index level parameter.}
 
-\item{search_type}{(character) The type of the search operation to perform. Can be
-\code{query_then_fetch} (default) or \code{dfs_query_then_fetch}. Types \code{scan} and
-\code{count} are deprecated. See \url{http://bit.ly/19Am9xP} for more details on the
-different types of search that can be performed.}
+\item{search_type}{(character) The type of the search operation to perform. 
+Can be \code{query_then_fetch} (default) or \code{dfs_query_then_fetch}. 
+Types \code{scan} and \code{count} are deprecated. 
+See \url{http://bit.ly/19Am9xP} for more details on the different types of 
+search that can be performed.}
 
-\item{lowercase_expanded_terms}{(logical) Should terms be automatically lowercased or not.
-Default: \code{TRUE}.}
+\item{lowercase_expanded_terms}{(logical) Should terms be automatically 
+lowercased or not. Default: \code{TRUE}.}
 
-\item{analyze_wildcard}{(logical) Should wildcard and prefix queries be analyzed or not.
-Default: \code{FALSE}.}
+\item{analyze_wildcard}{(logical) Should wildcard and prefix queries be 
+analyzed or not. Default: \code{FALSE}.}
 
 \item{version}{(logical) Print the document version with each document.}
 
-\item{lenient}{If \code{TRUE} will cause format based failures (like providing text to
-a numeric field) to be ignored. Default: \code{FALSE}}
+\item{lenient}{If \code{TRUE} will cause format based failures (like 
+providing text to a numeric field) to be ignored. Default: \code{FALSE}}
 
 \item{body}{Query, either a list or json.}
 
 \item{raw}{(logical) If \code{FALSE} (default), data is parsed to list. 
 If \code{TRUE}, then raw JSON returned}
 
-\item{asdf}{(logical) If \code{TRUE}, use \code{\link[jsonlite]{fromJSON}} to parse JSON
-directly to a data.frame. If \code{FALSE} (Default), list output is given.}
+\item{asdf}{(logical) If \code{TRUE}, use \code{\link[jsonlite]{fromJSON}} 
+to parse JSON directly to a data.frame. If \code{FALSE} (Default), list 
+output is given.}
 
-\item{scroll}{(character) Specify how long a consistent view of the index 
-should be maintained for scrolled search, e.g., "30s", "1m". See 
+\item{time_scroll}{(character) Specify how long a consistent view of the 
+index should be maintained for scrolled search, e.g., "30s", "1m". See 
 \code{\link{units-time}}.}
 
 \item{search_path}{(character) The path to use for searching. Default 
 to \code{_search}, but in some cases you may already have that in the base 
 url set using \code{\link{connect}}, in which case you can set this 
 to \code{NULL}}
+
+\item{stream_opts}{(list) A list of options passed to 
+\code{\link[jsonlite]{stream_out}} - Except that you can't pass \code{x} as 
+that's the data that's streamed out, and pass a file path instead of a 
+connection to \code{con}. \code{pagesize} param doesn't do much as 
+that's more or less controlled by paging with ES.}
 
 \item{...}{Curl args passed on to \code{\link[httr]{POST}}}
 }
@@ -120,7 +132,7 @@ it seems neccessary.
 \dontrun{
 if (!index_exists("shakespeare")) {
   shakespeare <- system.file("examples", "shakespeare_data.json", package = "elastic")
-  docs_bulk(shakespeare)
+  invisible(docs_bulk(shakespeare))
 }
 
 # URI string queries
@@ -148,8 +160,8 @@ Search(index = c("gbif", "shakespeare"))$hits$total
 ## search_type
 Search(index="shakespeare", search_type = "query_then_fetch")
 Search(index="shakespeare", search_type = "dfs_query_then_fetch")
-### search type "scan" is gone - use scroll instead
-Search(index="shakespeare", scroll = "2m")
+### search type "scan" is gone - use time_scroll instead
+Search(index="shakespeare", time_scroll = "2m")
 ### search type "count" is gone - use size=0 instead
 Search(index="shakespeare", size = 0)$hits$total
 
@@ -159,7 +171,20 @@ Search(index="shakespeare", size = 0)$hits$total
 Search(index="shakespeare", type="act", size = 0, terminate_after = 1)
 
 ## sorting
-Search(index="shakespeare", type="act", sort="text_entry")
+### if ES >5, we need to make sure fielddata is turned on for a field 
+### before using it for sort 
+if (gsub("\\\\.", "", ping()$version$number) >= 500) {
+  mapping_create("shakespeare", "act", update_all_types = TRUE, body = '{
+    "properties": {
+      "speaker": { 
+      "type":     "text",
+      "fielddata": true
+    }
+  }
+ }')
+ Search(index="shakespeare", type="act", sort="speaker")
+}
+
 if (gsub("\\\\.", "", ping()$version$number) < 500) {
   Search(index="shakespeare", type="act", sort="speaker:desc", 
     fields='speaker')
@@ -167,10 +192,11 @@ if (gsub("\\\\.", "", ping()$version$number) < 500) {
     sort=c("speaker:desc","play_name:asc"), fields=c('speaker','play_name'))
 }
 
+
 ## paging
 if (gsub("\\\\.", "", ping()$version$number) < 500) {
-  Search(index="shakespeare", size=1, fields='text_entry')$hits$hits
-  Search(index="shakespeare", size=1, from=1, fields='text_entry')$hits$hits
+  Search(index="shakespeare", size=1)$hits$hits
+  Search(index="shakespeare", size=1, from=1)$hits$hits
 }
 
 ## queries
@@ -232,17 +258,40 @@ Search(index="shakespeare", version=TRUE, size=2)
 ## Get raw data
 Search(index="shakespeare", type="scene", raw=TRUE)
 
-## Curl debugging
+## Curl options
 library('httr')
-out <- Search(index="shakespeare", type="line", config=verbose())
+
+### verbose 
+out <- Search(index="shakespeare", type="line", config = verbose())
+
+### print progress
+res <- Search(config = progress(), size = 5000)
 
 
 
 # Query DSL searches - queries sent in the body of the request
 ## Pass in as an R list
 
-aggs <- list(aggs = list(stats = list(terms = list(field = "text_entry"))))
-Search(index="shakespeare", body=aggs)
+### if ES >5, we need to make sure fielddata is turned on for a field 
+### before using it for aggregations 
+if (gsub("\\\\.", "", ping()$version$number) >= 500) {
+  mapping_create("shakespeare", "act", update_all_types = TRUE, body = '{
+    "properties": {
+      "text_entry": { 
+        "type":     "text",
+        "fielddata": true
+     }
+   }
+ }')
+ aggs <- list(aggs = list(stats = list(terms = list(field = "text_entry"))))
+ Search(index="shakespeare", body=aggs)
+}
+
+### if ES >5, you don't need to worry about fielddata
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+   aggs <- list(aggs = list(stats = list(terms = list(field = "text_entry"))))
+   Search(index="shakespeare", body=aggs)
+}
 
 ## or pass in as json query with newlines, easy to read
 aggs <- '{
@@ -371,17 +420,10 @@ Search(index="shakespeare", body=boost)
 
 # Fuzzy query
 ## fuzzy query on numerics
-fuzzy <- list(query = list(fuzzy = list(speech_number = 7)))
+fuzzy <- list(query = list(fuzzy = list(text_entry = "arms")))
 Search(index="shakespeare", body=fuzzy)$hits$total
-fuzzy <- list(query = list(fuzzy = list(speech_number = list(value = 7, fuzziness = 4))))
+fuzzy <- list(query = list(fuzzy = list(text_entry = list(value = "arms", fuzziness = 4))))
 Search(index="shakespeare", body=fuzzy)$hits$total
-
-### fuzzy query on date/time
-fuzzy <- list(query = list(fuzzy = list(eventDate = list(value = "2014-01-29T23:00:00.000",
-   fuzziness = "1d"))))
-out <- Search(index="gbif", body=fuzzy, fields="eventDate")
-out$hits$total
-sapply(out$hits$hits, function(x) x$fields$eventDate) ## sweet!!!
 
 # geoshape query
 ## not working yets
@@ -472,18 +514,14 @@ body <- '{
 Search('shakespeare', 'line', body=body)
 
 ## Scrolling search - instead of paging
-Search('shakespeare', q="a*")$hits$total
-res <- Search(index = 'shakespeare', q="a*", scroll="1m")
-res <- Search(index = 'shakespeare', q="a*", scroll="1m", 
-  search_type = "scan")
-scroll(scroll_id = res$`_scroll_id`)
+res <- Search(index = 'shakespeare', q="a*", time_scroll="1m")
+scroll(res$`_scroll_id`)
 
-res <- Search(index = 'shakespeare', q="a*", scroll="5m", 
-  search_type = "scan")
+res <- Search(index = 'shakespeare', q="a*", time_scroll="5m")
 out <- list()
 hits <- 1
 while(hits != 0){
-  res <- scroll(scroll_id = res$`_scroll_id`)
+  res <- scroll(res$`_scroll_id`)
   hits <- length(res$hits$hits)
   if(hits > 0)
     out <- c(out, res$hits$hits)
@@ -516,15 +554,15 @@ body2 <- '{
   }
 }'
 
-res1 <- Search(index = 'shakespeare', scroll="1m", body = body1)
-res2 <- Search(index = 'shakespeare', scroll="1m", body = body2)
-scroll(scroll_id = res1$`_scroll_id`)
-scroll(scroll_id = res2$`_scroll_id`)
+res1 <- Search(index = 'shakespeare', time_scroll="1m", body = body1)
+res2 <- Search(index = 'shakespeare', time_scroll="1m", body = body2)
+scroll(res1$`_scroll_id`)
+scroll(res2$`_scroll_id`)
 
 out1 <- list()
 hits <- 1
 while(hits != 0){
-  tmp1 <- scroll(scroll_id = res1$`_scroll_id`)
+  tmp1 <- scroll(res1$`_scroll_id`)
   hits <- length(tmp1$hits$hits)
   if(hits > 0)
     out1 <- c(out1, tmp1$hits$hits)
@@ -533,7 +571,7 @@ while(hits != 0){
 out2 <- list()
 hits <- 1
 while(hits != 0){
-  tmp2 <- scroll(scroll_id = res2$`_scroll_id`)
+  tmp2 <- scroll(res2$`_scroll_id`)
   hits <- length(tmp2$hits$hits)
   if(hits > 0)
     out2 <- c(out2, tmp2$hits$hits)
@@ -576,7 +614,7 @@ body <- '{
 }'
 index_recreate(index='gbifgeopoint', body=body)
 path <- system.file("examples", "gbif_geopoint.json", package = "elastic")
-docs_bulk(path)
+invisible(docs_bulk(path))
 
 ### Points within a bounding box
 body <- '{
@@ -590,11 +628,11 @@ body <- '{
           "location" : {
             "top_left" : {
               "lat" : 60,
-              "lon" : 14
+              "lon" : 1
             },
             "bottom_right" : {
               "lat" : 40,
-              "lon" : 1
+              "lon" : 14
             }
           }
        }
@@ -602,46 +640,42 @@ body <- '{
    }
  }
 }'
-out <- Search('gbifgeopoint', body = body)
+out <- Search('gbifgeopoint', body = body, size = 300)
 out$hits$total
 do.call(rbind, lapply(out$hits$hits, function(x) x$`_source`$location))
 
 ### Points within distance of a point
 body <- '{
- "query":{
-   "filtered":{
-     "filter":{
-        "geo_distance" : {
-        "distance" : "200km" ,
-           "location" : {
-              "lon" : 4,
-              "lat" : 50
-            }
-         }
+"query": {
+  "bool" : {
+    "must" : {
+      "match_all" : {}
+    },
+   "filter" : {
+     "geo_distance" : {
+       "distance" : "200km",
+       "location" : {
+         "lon" : 4,
+         "lat" : 50
        }
      }
-   }
-}'
+  }
+}}}'
 out <- Search('gbifgeopoint', body = body)
 out$hits$total
 do.call(rbind, lapply(out$hits$hits, function(x) x$`_source`$location))
 
 ### Points within distance range of a point
 body <- '{
- "query":{
-   "bool" : {
-     "must" : {
-       "match_all" : {}
-     },
-     "filter":{
-       "geo_distance_range" : {
-         "from" : "200km",
-         "to" : "400km",
-         "location" : {
-           "lon" : 4,
-           "lat" : 50
-         }
-       }
+ "aggs":{
+   "points_within_dist" : {
+     "geo_distance" : {
+        "field": "location",
+        "origin" : "4, 50",
+        "ranges": [ 
+          {"from" : 200},
+          {"to" : 400}
+         ]
      }
    }
  }
@@ -686,7 +720,7 @@ body <- '{
 }'
 index_recreate(index='geoshape', body=body)
 path <- system.file("examples", "gbif_geoshape.json", package = "elastic")
-docs_bulk(path)
+invisible(docs_bulk(path))
 
 #### Get data with a square envelope, w/ point defining upper left and the other
 #### defining the lower right
@@ -741,16 +775,33 @@ out <- Search('geoshape', body = body)
 out$hits$total
 
 # Missing filter
-body <- '{
- "query":{
-   "constant_score" : {
-     "filter" : {
-       "missing" : { "field" : "play_name" }
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+  ### ES < v5
+  body <- '{
+   "query":{
+     "constant_score" : {
+       "filter" : {
+         "missing" : { "field" : "play_name" }
+       }
      }
+    }
+  }'
+  Search("shakespeare", body = body)
+} else {
+  ### ES => v5
+  body <- '{
+   "query":{
+     "bool" : {
+       "must_not" : {
+         "exists" : { 
+           "field" : "play_name" 
+         }
+       }
+    }
    }
- }
-}'
-Search("shakespeare", body = body)
+  }'
+  Search("shakespeare", body = body)
+}
 
 # prefix filter
 body <- '{
@@ -768,48 +819,118 @@ x <- Search("shakespeare", body = body)
 x$hits$total
 vapply(x$hits$hits, "[[", "", c("_source", "speaker"))
 
+
 # ids filter
-body <- '{
- "query":{
-   "bool": {
-     "must": {
-       "ids" : {
-         "values": ["1","2","3","10","2000"]
-       }
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+  ### ES < v5
+  body <- '{
+   "query":{
+     "bool": {
+       "must": {
+         "ids" : {
+           "values": ["1","2","10","2000"]
+        }
+      }
+    }
+   }
+  }'
+  x <- Search("shakespeare", body = body)
+  x$hits$total
+  identical(
+   c("1","2","10","2000"),
+   vapply(x$hits$hits, "[[", "", "_id")
+  )
+} else {
+  body <- '{
+   "query":{
+     "ids" : {
+       "values": ["1","2","10","2000"]
      }
    }
- }
-}'
-x <- Search("shakespeare", body = body)
-x$hits$total
-identical(
- c("1","2","3","10","2000"),
- vapply(x$hits$hits, "[[", "", "_id")
-)
+  }'
+  x <- Search("shakespeare", body = body)
+  x$hits$total
+  identical(
+   c("2000","10","2","1"),
+   vapply(x$hits$hits, "[[", "", "_id")
+  )
+}
 
 # combined prefix and ids filters
-body <- '{
- "query":{
-   "bool" : {
-     "should" : {
-       "or": [
-       {
-         "ids" : {
-           "values": ["1","2","3","10","2000"]
-         }
-       },
-       {
+if (gsub("\\\\.", "", ping()$version$number) < 500) {
+  ### ES < v5
+  body <- '{
+   "query":{
+     "bool" : {
+       "should" : {
+         "or": [{
+           "ids" : {
+             "values": ["1","2","3","10","2000"]
+           }
+         }, {
          "prefix" : {
            "speaker" : "we"
          }
-       }
-     ]
+        }
+      ]
      }
+    }
    }
- }
+  }'
+  x <- Search("shakespeare", body = body)
+  x$hits$total
+} else {
+  ### ES => v5
+  body <- '{
+   "query":{
+     "bool" : {
+       "should" : [
+         {
+           "ids" : {
+             "values": ["1","2","3","10","2000"]
+           }
+         }, 
+         {
+           "prefix" : {
+             "speaker" : "we"
+           }
+         }
+      ]
+     }
+    }
+  }'
+  x <- Search("shakespeare", body = body)
+  x$hits$total
+}
+
+# Suggestions
+sugg <- '{
+ "query" : {
+    "match" : {
+      "text_entry" : "late"
+     }
+ },  
+ "suggest" : {
+   "sugg" : {
+     "text" : "late",
+     "term" : {
+         "field" : "text_entry"
+      }
+    }
+  }
 }'
-x <- Search("shakespeare", body = body)
-x$hits$total
+Search(index = "shakespeare", "line", body = sugg, 
+  asdf = TRUE, size = 0)$suggest$sugg$options
+
+
+
+# stream data out using jsonlite::stream_out
+file <- tempfile()
+res <- Search("shakespeare", size = 1000, stream_opts = list(file = file))
+head(df <- jsonlite::stream_in(file(file)))
+NROW(df)
+unlink(file)
+
 }
 }
 \references{
@@ -819,5 +940,5 @@ x$hits$total
 \seealso{
 \code{\link{Search_uri}} \code{\link{Search_template}} 
 \code{\link{scroll}} \code{\link{count}} \code{\link{validate}}
+\code{\link{fielddata}}
 }
-

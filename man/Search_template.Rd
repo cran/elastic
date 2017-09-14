@@ -2,9 +2,9 @@
 % Please edit documentation in R/search_template.R
 \name{Search_template}
 \alias{Search_template}
-\alias{Search_template_delete}
-\alias{Search_template_get}
 \alias{Search_template_register}
+\alias{Search_template_get}
+\alias{Search_template_delete}
 \alias{Search_template_render}
 \title{Search or validate templates}
 \usage{
@@ -55,6 +55,7 @@ extension. In order to execute the stored template, reference it
 by it's name under the template key, like 
 \code{"file": "templateName", ...}
 }
+
 \examples{
 \dontrun{
 if (!index_exists("iris")) {
@@ -128,7 +129,9 @@ Search_template(body = body4)
 Search_template_delete('foobar')
 }
 }
+\references{
+\url{https://www.elastic.co/guide/en/elasticsearch/reference/current/search-template.html}
+}
 \seealso{
 \code{\link{Search}}, \code{\link{Search_uri}}
 }
-

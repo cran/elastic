@@ -6,7 +6,9 @@
 #' @param body (list) Either a list or json, representing the query.
 #' @param field (character) One or more field names
 #' @param include_defaults (logical) Whether to return default values
-#' @param ... Curl options passed on to \code{\link[httr]{HEAD}} or other http verbs
+#' @param update_all_types (logical) update all types. default: \code{FALSE}
+#' @param ... Curl options passed on to \code{\link[httr]{HEAD}} or other 
+#' http verbs
 #' @details
 #' Find documentation for each function at:
 #' \itemize{
@@ -31,7 +33,7 @@
 #' # The put mapping API allows to register specific mapping definition for a specific type.
 #' ## a good mapping body
 #' body <- list(citation = list(properties = list(
-#'  journal = list(type="string"),
+#'  journal = list(type="text"),
 #'  year = list(type="long")
 #' )))
 #' if (!index_exists("plos")) index_create("plos")
@@ -41,7 +43,7 @@
 #' body <- '{
 #'   "citation": {
 #'     "properties": {
-#'       "journal": { "type": "string" },
+#'       "journal": { "type": "text" },
 #'       "year": { "type": "long" }
 #' }}}'
 #' mapping_create(index = "plos", type = "citation", body=body)
@@ -49,7 +51,7 @@
 #'
 #' ## A bad mapping body
 #' body <- list(things = list(properties = list(
-#'   journal = list("string")
+#'   journal = list("text")
 #' )))
 #' # mapping_create(index = "plos", type = "things", body=body)
 #'
@@ -62,7 +64,7 @@
 #'
 #' # Get field mappings
 #' plosdat <- system.file("examples", "plos_data.json", package = "elastic")
-#' docs_bulk(plosdat)
+#' invisible(docs_bulk(plosdat))
 #' field_mapping_get(index = "_all", type=c('article', 'line'), field = "text")
 #' field_mapping_get(index = "plos", type = "article", field = "title")
 #' field_mapping_get(index = "plos", type = "article", field = "*")
@@ -71,22 +73,35 @@
 #' field_mapping_get(type = "a*", field = "t*")
 #'
 #' # Create geospatial mapping
+#' if (index_exists("gbifgeopoint")) index_delete("gbifgeopoint")
 #' file <- system.file("examples", "gbif_geopoint.json", package = "elastic")
-#' docs_bulk(file)
+#' index_create("gbifgeopoint")
 #' body <- '{
 #'  "properties" : {
 #'    "location" : { "type" : "geo_point" }
 #'  }
 #' }'
 #' mapping_create("gbifgeopoint", "record", body = body)
+#' invisible(docs_bulk(file))
+#' 
+#' # update_all_fields, see also ?fielddata
+#' mapping_create("shakespeare", "record", update_all_types=TRUE, body = '{
+#'   "properties": {
+#'     "speaker": { 
+#'       "type":     "text",
+#'       "fielddata": true
+#'     }
+#'   }
+#' }')
 #' }
 
 #' @export
 #' @rdname mapping
-mapping_create <- function(index, type, body, ...){
+mapping_create <- function(index, type, body, update_all_types = FALSE, ...) {
   url <- make_url(es_get_auth())
   url <- file.path(url, esc(index), "_mapping", esc(type))
-  es_PUT(url, body, ...)
+  args <- ec(list(update_all_types = as_log(update_all_types)))
+  es_PUT(url, body, args, ...)
 }
 
 #' @export
@@ -134,11 +149,19 @@ field_mapping_get <- function(index = NULL, type = NULL, field, include_defaults
 #' @rdname mapping
 type_exists <- function(index, type, ...){
   # seems to not work in v1, so don't try cause would give false result
-  if (gsub("\\.", "", ping(...)$version$number) <= 100) {
+  if (es_ver() <= 100) {
     stop("type exists not available in this ES version", call. = FALSE)
   }
-  #checkconn(...)
   url <- make_url(es_get_auth())
-  res <- HEAD(file.path(url, esc(index), esc(type)), make_up(), es_env$headers, ...)
+  
+  if (es_ver() >= 500) {
+    # in ES >= v5, new URL format
+    url <- file.path(url, esc(index), "_mapping", esc(type))
+  } else {
+    # in ES < v5, old URL format
+    url <- file.path(url, esc(index), esc(type))
+  }
+  
+  res <- HEAD(url, make_up(), es_env$headers, ...)
   if (res$status_code == 200) TRUE else FALSE
 }

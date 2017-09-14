@@ -46,7 +46,7 @@ docs_get <- function(index, type, id, source=NULL, fields=NULL, exists=FALSE,
   
   url <- make_url(es_get_auth())
   # fields parameter changed to stored_fields in Elasticsearch v5.0
-  field_name <- if (gsub("\\.", "", ping(...)$version$number) >= 500) "stored_fields" else "fields"
+  field_name <- if (es_ver() >= 500) "stored_fields" else "fields"
   args <- ec(stats::setNames(list(cl(fields)), field_name), ...)
   if (inherits(source, "logical")) source <- tolower(source)
   args <- c(args, `_source` = cl(source))
@@ -55,10 +55,10 @@ docs_get <- function(index, type, id, source=NULL, fields=NULL, exists=FALSE,
   url <- sprintf("%s/%s/%s/%s", url, esc(index), esc(type), esc(id))
 
   if (exists) {
-    out <- HEAD(url, query = args, c(es_env$headers, mc(make_up(), callopts)))
+    out <- HEAD(url, query = args, es_env$headers, make_up(), callopts)
     if (out$status_code == 200) TRUE else FALSE
   } else {
-    out <- GET(url, query = args, c(es_env$headers, mc(make_up(), callopts)))
+    out <- GET(url, query = args, es_env$headers, make_up(), callopts)
     geterror(out)
     if (verbose) message(URLdecode(out$url))
     if (raw) {
