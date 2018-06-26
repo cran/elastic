@@ -1,17 +1,17 @@
 #' Index API operations
 #'
 #' @references
-#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices.html}
+#' <https://www.elastic.co/guide/en/elasticsearch/reference/current/indices.html>
 #' @author Scott Chamberlain <myrmecocystus@@gmail.com>
 #' @name index
 #'
 #' @param index (character) A character vector of index names
-#' @param features (character) A character vector of features. One or more of 
-#' settings, mappings, or aliases
-#' @param raw If TRUE (default), data is parsed to list. If FALSE, then raw JSON.
-#' @param ... Curl args passed on to \code{\link[httr]{POST}}, \code{\link[httr]{GET}},
-#' \code{\link[httr]{PUT}}, \code{\link[httr]{HEAD}}, or \code{\link[httr]{DELETE}}
-#' @param verbose If TRUE (default) the url call used printed to console.
+#' @param features (character) A single feature. One of settings, mappings, or 
+#' aliases
+#' @param raw If `TRUE` (default), data is parsed to list. If FALSE, then raw JSON.
+#' @param ... Curl args passed on to [httr::POST()], [httr::GET()],
+#' [httr::PUT()], [httr::HEAD()], or [httr::DELETE()]
+#' @param verbose If `TRUE` (default) the url call used printed to console.
 #' @param fields (character) Fields to add.
 #' @param metric (character) A character vector of metrics to display. Possible 
 #' values: "_all", "completion", "docs", "fielddata", "filter_cache", "flush", 
@@ -24,19 +24,19 @@
 #' @param groups (character) A character vector of search groups for search statistics.
 #' @param level (character) Return stats aggregated on "cluster", "indices" (default) or "shards"
 #' @param active_only (logical) Display only those recoveries that are currently on-going.
-#' Default: FALSE
+#' Default: `FALSE`
 #' @param detailed (logical) Whether to display detailed information about shard recovery.
-#' Default: FALSE
+#' Default: `FALSE`
 #' @param max_num_segments (character) The number of segments the index should be merged into.
 #' Default: "dynamic"
 #' @param only_expunge_deletes (logical) Specify whether the operation should only expunge
 #' deleted documents
 #' @param flush (logical) Specify whether the index should be flushed after performing the
-#' operation. Default: TRUE
+#' operation. Default: `TRUE`
 #' @param wait_for_merge (logical) Specify whether the request should block until the merge
-#' process is finished. Default: TRUE
+#' process is finished. Default: `TRUE`
 #' @param wait_for_completion (logical) Should the request wait for the upgrade to complete.
-#' Default: FALSE
+#' Default: `FALSE`
 #'
 #' @param text The text on which the analysis should be performed (when request body is not used)
 #' @param field Use the analyzer configured for this field (instead of passing the analyzer name)
@@ -52,10 +52,9 @@
 #' @param wait_if_ongoing If TRUE, the flush operation will block until the flush can be executed
 #' if another flush operation is already executing. The default is false and will cause an
 #' exception to be thrown on the shard level if another flush operation is already running.
-#' [1.4.0.Beta1]
 #'
 #' @param filter (logical) Clear filter caches
-#' @param filter_keys (character) A vector of keys to clear when using the \code{filter_cache}
+#' @param filter_keys (character) A vector of keys to clear when using the `filter_cache`
 #' parameter (default: all)
 #' @param fielddata (logical) Clear field data
 #' @param query_cache (logical) Clear query caches
@@ -64,23 +63,23 @@
 #' @param body Query, either a list or json.
 #'
 #' @details
-#' \bold{index_analyze}:
+#' **index_analyze**:
 #' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html}
 #' This method can accept a string of text in the body, but this function passes it as a
 #' parameter in a GET request to simplify.
 #'
-#' \bold{index_flush}:
+#' **index_flush**:
 #' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-flush.html}
 #' From the ES website: The flush process of an index basically frees memory from the index by
 #' flushing data to the index storage and clearing the internal transaction log. By default,
 #' Elasticsearch uses memory heuristics in order to automatically trigger flush operations as
 #' required in order to clear memory.
 #'
-#' \bold{index_status}: The API endpoint for this function was deprecated in
-#' Elasticsearch \code{v1.2.0}, and will likely be removed soon. Use \code{\link{index_recovery}}
+#' **index_status**: The API endpoint for this function was deprecated in
+#' Elasticsearch `v1.2.0`, and will likely be removed soon. Use [index_recovery()]
 #' instead.
 #'
-#' \bold{index_settings_update}: There are a lot of options you can change with this
+#' **index_settings_update**: There are a lot of options you can change with this
 #' function. See
 #' https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-update-settings.html
 #' for all the options.
@@ -88,8 +87,10 @@
 #' @examples \dontrun{
 #' # get information on an index
 #' index_get(index='shakespeare')
-#' index_get(index='shakespeare', features=c('settings','mappings'))
-#' index_get(index='shakespeare', features='aliases')
+#' ## this one is the same as running index_settings('shakespeare')
+#' index_get(index='shakespeare', features='settings')
+#' index_get(index='shakespeare', features='mappings')
+#' index_get(index='shakespeare', features='alias')
 #'
 #' # check for index existence
 #' index_exists(index='shakespeare')
@@ -264,6 +265,7 @@ NULL
 #' @rdname index
 index_get <- function(index=NULL, features=NULL, raw=FALSE, verbose=TRUE, ...) {
   stop_es_version(120, "index_get")
+  if (length(features) > 1) stop("'features' must be length 1")
   index_GET(index, features, raw, ...)
 }
 
@@ -290,12 +292,7 @@ index_delete <- function(index, raw=FALSE, verbose=TRUE, ...) {
 #' @rdname index
 index_create <- function(index=NULL, body=NULL, raw=FALSE, verbose=TRUE, ...) {
   url <- make_url(es_get_auth())
-  out <- PUT(paste0(url, "/", esc(index)), body = body, 
-             content_type_json(), make_up(), ...)
-  geterror(out)
-  if (verbose) message(URLdecode(out$url))
-  tt <- cont_utf8(out)
-  if (raw) tt else jsonlite::fromJSON(tt, FALSE)
+  es_PUT(paste0(url, "/", esc(index)), body = body, ...)
 }
 
 #' @export

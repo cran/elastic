@@ -148,3 +148,20 @@ stop_es_version <- function(ver_check, fxn) {
          call. = FALSE)
   }
 }
+
+assert <- function(x, y) {
+  if (!is.null(x)) {
+    if (!class(x) %in% y) {
+      stop(deparse(substitute(x)), " must be of class ",
+           paste0(y, collapse = ", "), call. = FALSE)
+    }
+  }
+}
+
+
+write_utf8 = function(text, con, ...) {
+  # prevent re-encoding the text in the file() connection in writeLines()
+  # https://kevinushey.github.io/blog/2018/02/21/string-encoding-and-r/
+  opts = options(encoding = 'native.enc'); on.exit(options(opts), add = TRUE)
+  writeLines(enc2utf8(text), con, ..., useBytes = TRUE)
+}

@@ -23,7 +23,7 @@ make_bulk <- function(df, index, type, counter, es_ids, path = NULL) {
   )
   data <- jsonlite::toJSON(df, collapse = FALSE, na = "null", auto_unbox = TRUE)
   tmpf <- if (is.null(path)) tempfile("elastic__") else path
-  writeLines(paste(metadata, data, sep = "\n"), tmpf)
+  write_utf8(paste(metadata, data, sep = "\n"), tmpf)
   invisible(tmpf)
 }
 
@@ -74,6 +74,11 @@ close_conns <- function() {
   for (i in ours) {
     close(getConnection(i))
   }
+}
+
+cleanup_file <- function(x) {
+  # don't unlink file if it is not a tempfile
+  if (grepl("elastic__", x)) unlink(x, force = TRUE)
 }
 
 check_named_vectors <- function(x) {

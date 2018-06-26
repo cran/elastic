@@ -7,7 +7,7 @@
 #' @param type (character) The type name to use. If left as NULL, will be
 #' same name as index.
 #' @param chunk_size (integer) Size of each chunk. If your data.frame is smaller
-#' thank \code{chunk_size}, this parameter is essentially ignored. We write in
+#' thank `chunk_size`, this parameter is essentially ignored. We write in
 #' chunks because at some point, depending on size of each document, and
 #' Elasticsearch setup, writing a very large number of documents in one go
 #' becomes slow, so chunking can help. This parameter is ignored if you
@@ -18,14 +18,19 @@
 #' character. Default: not passed
 #' @param es_ids (boolean) Let Elasticsearch assign document IDs as UUIDs.
 #' These are sequential, so there is order to the IDs they assign.
-#' If \code{TRUE}, \code{doc_ids} is ignored. Default: \code{TRUE}
-#' @param raw (logical) Get raw JSON back or not.
-#' @param ... Pass on curl options to \code{\link[httr]{POST}}
+#' If `TRUE`, \code{doc_ids} is ignored. Default: `TRUE`
+#' @param raw (logical) Get raw JSON back or not. If `TRUE` 
+#' you get JSON; if `FALSE` you get a list. Default: `FALSE`
+#' @param quiet (logical) Suppress progress bar. Default: `FALSE`
+#' @param ... Pass on curl options to [httr::POST()]
 #'
-#' @seealso \code{\link{docs_bulk_prep}}
+#' @seealso [docs_bulk_prep()] for prepping a newline delimited 
+#' JSON file that you can load into Elasticsearch yourself. See 
+#' [docs_bulk_update()] for updating documents from an R data.frame
+#' or list.
 #'
 #' @details More on the Bulk API:
-#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html}.
+#' <https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html>
 #'
 #' This function dispatches on data.frame or character input. Character input
 #' has to be a file name or the function stops with an error message.
@@ -43,52 +48,63 @@
 #' bar is based around a for loop, where progress indicates progress along
 #' the iterations of the for loop, where each iteration is a chunk of data
 #' that's converted to bulk format, then pushed into Elasticsearch. The
-#' \code{character} method has no for loop, so no progress bar.
+#' `character` method has no for loop, so no progress bar.
 #'
 #' @section Document IDs:
-#' Document IDs can be passed in via the \code{doc_ids} paramater when passing
-#' in data.frame or list, but not with files. If ids not passed to
-#' \code{doc_ids}, we assign document IDs from 1 to length of the object
+#' Document IDs can be passed in via the `doc_ids` paramater when passing
+#' in data.frame or list, but not with files. If ids are not passed to
+#' `doc_ids`, we assign document IDs from 1 to length of the object
 #' (rows of a data.frame, or length of a list). In the future we may allow the
-#' user to select whether
-#' they want to assign sequential numeric IDs or to allow Elasticsearch to
-#' assign IDs, which are UUIDs that are actually sequential, so you still can
-#' determine an order of your documents.
+#' user to select whether they want to assign sequential numeric IDs or 
+#' to allow Elasticsearch to assign IDs, which are UUIDs that are actually 
+#' sequential, so you still can determine an order of your documents.
+#' 
+#' @section Document IDs and Factors:
+#' If you pass in ids that are of class factor, we coerce them to character 
+#' with `as.character`. This applies to both data.frame and list inputs, but
+#' not to file inputs.
 #'
 #' @section Large numbers for document IDs:
 #' Until recently, if you had very large integers for document IDs,
-#' \code{docs_bulk} failed. It should be fixed now. Let us know if not.
+#' `docs_bulk` failed. It should be fixed now. Let us know if not.
 #'
 #' @section Missing data:
-#' As of \pkg{elastic} version \code{0.7.8.9515} we convert \code{NA} to
-#' \code{null} before loading into Elasticsearch. Previously, fields that
-#' had an \code{NA} were dropped - but when you read data back from
+#' As of \pkg{elastic} version `0.7.8.9515` we convert `NA` to
+#' `null` before loading into Elasticsearch. Previously, fields that
+#' had an `NA` were dropped - but when you read data back from
 #' Elasticsearch into R, you retain those missing values as \pkg{jsonlite}
-#' fills those in for you. Now, fields with \code{NA}'s are made into
-#' \code{null}, and are not dropped in Elasticsearch.
+#' fills those in for you. Now, fields with `NA`'s are made into
+#' `null`, and are not dropped in Elasticsearch.
 #'
 #' Note also that null values can not be indexed or searched
-#' \url{https://www.elastic.co/guide/en/elasticsearch/reference/5.3/null-value.html}
+#' <https://www.elastic.co/guide/en/elasticsearch/reference/5.3/null-value.html>
 #'
 #' @section Tips:
 #' This function returns the response from Elasticsearch, but you'll likely
 #' not be that interested in the response. If not, wrap your call to
-#' \code{docs_bulk} in \code{\link{invisible}}, like so:
-#' \code{invisible(docs_bulk(...))}
+#' `docs_bulk` in [invisible()], like so: `invisible(docs_bulk(...))`
+#' 
+#' @section Connections/Files:
+#' We create temporary files, and connections to those files, when data.frame's 
+#' and lists are passed in to `docs_bulk()` (not when a file is passed in 
+#' since we don't need to create a file). After inserting data into your 
+#' Elasticsearch instance, we close the connections and delete the temporary files.
+#' 
+#' There are some exceptions though. When you pass in your own file, whether a 
+#' tempfile or not, we don't delete those files after using them - in case 
+#' you need those files again. Your own tempfile's will be cleaned up/delete 
+#' when the R session ends. Non-tempfile's won't be cleaned up/deleted after
+#' the R session ends. 
 #'
 #' @return A list
 #'
 #' @examples \dontrun{
+#' # From a file already in newline delimited JSON format
 #' plosdat <- system.file("examples", "plos_data.json", package = "elastic")
 #' docs_bulk(plosdat)
 #' aliases_get()
 #' index_delete(index='plos')
 #' aliases_get()
-#'
-#' # Curl options
-#' library("httr")
-#' plosdat <- system.file("examples", "plos_data.json", package = "elastic")
-#' docs_bulk(plosdat, config=verbose())
 #'
 #' # From a data.frame
 #' docs_bulk(mtcars, index = "hello", type = "world")
@@ -172,16 +188,31 @@
 #' out <- docs_bulk(x = res, index = db)
 #' count(db)
 #' index_delete(db)
+#' 
+#' 
+#' 
+#' # Curl options
+#' library("httr")
+#' plosdat <- system.file("examples", "plos_data.json", package = "elastic")
+#' docs_bulk(plosdat, config=verbose())
+#' 
+#' 
+#' # suppress progress bar
+#' x <- docs_bulk(mtcars, index = "hello", type = "world", quiet = TRUE)
+#' ## vs. 
+#' x <- docs_bulk(mtcars, index = "hello", type = "world", quiet = FALSE)
 #' }
 docs_bulk <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                      doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...) {
+                      doc_ids = NULL, es_ids = TRUE, raw = FALSE, 
+                      quiet = FALSE, ...) {
 
   UseMethod("docs_bulk")
 }
 
 #' @export
 docs_bulk.default <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                      doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...) {
+                      doc_ids = NULL, es_ids = TRUE, raw = FALSE, 
+                      quiet = FALSE, ...) {
 
   stop("no 'docs_bulk' method for class ", class(x), call. = FALSE)
 }
@@ -189,8 +220,9 @@ docs_bulk.default <- function(x, index = NULL, type = NULL, chunk_size = 1000,
 #' @export
 docs_bulk.data.frame <- function(x, index = NULL, type = NULL, chunk_size = 1000,
                                  doc_ids = NULL, 
-                                 es_ids = TRUE, raw = FALSE, ...) {
+                                 es_ids = TRUE, raw = FALSE, quiet = FALSE, ...) {
 
+  assert(quiet, "logical")
   if (is.null(index)) {
     stop("index can't be NULL when passing a data.frame",
          call. = FALSE)
@@ -204,17 +236,20 @@ docs_bulk.data.frame <- function(x, index = NULL, type = NULL, chunk_size = 1000
   if (!is.null(doc_ids)) {
     id_chks <- split(doc_ids, ceiling(seq_along(doc_ids) / chunk_size))
   } else if (has_ids(x)) {
-    rws <- x$id
+    rws <- if (inherits(x$id, "factor")) as.character(x$id) else x$id
     id_chks <- split(rws, ceiling(seq_along(rws) / chunk_size))
   } else {
     rws <- shift_start(rws, index, type)
     id_chks <- split(rws, ceiling(seq_along(rws) / chunk_size))
   }
-  pb <- txtProgressBar(min = 0, max = length(data_chks), initial = 0, style = 3)
-  on.exit(close(pb))
+  
+  if (!quiet) {
+    pb <- txtProgressBar(min = 0, max = length(data_chks), initial = 0, style = 3)
+    on.exit(close(pb))
+  }
   resl <- vector(mode = "list", length = length(data_chks))
   for (i in seq_along(data_chks)) {
-    setTxtProgressBar(pb, i)
+    if (!quiet) setTxtProgressBar(pb, i)
     resl[[i]] <- docs_bulk(make_bulk(x[data_chks[[i]], , drop = FALSE], 
                                      index, type, id_chks[[i]], es_ids), ...)
   }
@@ -223,8 +258,10 @@ docs_bulk.data.frame <- function(x, index = NULL, type = NULL, chunk_size = 1000
 
 #' @export
 docs_bulk.list <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                           doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...) {
+                           doc_ids = NULL, es_ids = TRUE, raw = FALSE, 
+                           quiet = FALSE, ...) {
 
+  assert(quiet, "logical")
   if (is.null(index)) {
     stop("index can't be NULL when passing a list",
          call. = FALSE)
@@ -239,17 +276,21 @@ docs_bulk.list <- function(x, index = NULL, type = NULL, chunk_size = 1000,
   if (!is.null(doc_ids)) {
     id_chks <- split(doc_ids, ceiling(seq_along(doc_ids) / chunk_size))
   } else if (has_ids(x)) {
-    rws <- as.numeric(sapply(x, "[[", "id"))
+    rws <- sapply(x, "[[", "id")
+    rws <- if (inherits(rws, "factor")) as.character(rws) else rws
     id_chks <- split(rws, ceiling(seq_along(rws) / chunk_size))
   } else {
     rws <- shift_start(rws, index, type)
     id_chks <- split(rws, ceiling(seq_along(rws) / chunk_size))
   }
-  pb <- txtProgressBar(min = 0, max = length(data_chks), initial = 0, style = 3)
-  on.exit(close(pb))
+
+  if (!quiet) {
+    pb <- txtProgressBar(min = 0, max = length(data_chks), initial = 0, style = 3)
+    on.exit(close(pb))
+  }
   resl <- vector(mode = "list", length = length(data_chks))
   for (i in seq_along(data_chks)) {
-    setTxtProgressBar(pb, i)
+    if (!quiet) setTxtProgressBar(pb, i)
     resl[[i]] <- docs_bulk(make_bulk(x[data_chks[[i]]], index, 
                                      type, id_chks[[i]], es_ids), ...)
   }
@@ -258,10 +299,12 @@ docs_bulk.list <- function(x, index = NULL, type = NULL, chunk_size = 1000,
 
 #' @export
 docs_bulk.character <- function(x, index = NULL, type = NULL, chunk_size = 1000,
-                                doc_ids = NULL, es_ids = TRUE, raw=FALSE, ...) {
+                                doc_ids = NULL, es_ids = TRUE, raw=FALSE, 
+                                quiet = FALSE, ...) {
 
-  on.exit(close_conns())
   stopifnot(file.exists(x))
+  on.exit(close_conns())
+  on.exit(cleanup_file(x), add = TRUE)
   url <- paste0(make_url(es_get_auth()), '/_bulk')
   tt <- POST(url, make_up(), es_env$headers, ..., 
              body = upload_file(x, type = "application/x-ndjson"), 

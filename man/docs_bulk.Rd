@@ -5,7 +5,7 @@
 \title{Use the bulk API to create, index, update, or delete documents.}
 \usage{
 docs_bulk(x, index = NULL, type = NULL, chunk_size = 1000,
-  doc_ids = NULL, es_ids = TRUE, raw = FALSE, ...)
+  doc_ids = NULL, es_ids = TRUE, raw = FALSE, quiet = FALSE, ...)
 }
 \arguments{
 \item{x}{A list, data.frame, or character path to a file. required.}
@@ -32,9 +32,12 @@ character. Default: not passed}
 These are sequential, so there is order to the IDs they assign.
 If \code{TRUE}, \code{doc_ids} is ignored. Default: \code{TRUE}}
 
-\item{raw}{(logical) Get raw JSON back or not.}
+\item{raw}{(logical) Get raw JSON back or not. If \code{TRUE}
+you get JSON; if \code{FALSE} you get a list. Default: \code{FALSE}}
 
-\item{...}{Pass on curl options to \code{\link[httr]{POST}}}
+\item{quiet}{(logical) Suppress progress bar. Default: \code{FALSE}}
+
+\item{...}{Pass on curl options to \code{\link[httr:POST]{httr::POST()}}}
 }
 \value{
 A list
@@ -44,7 +47,7 @@ Use the bulk API to create, index, update, or delete documents.
 }
 \details{
 More on the Bulk API:
-\url{https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html}.
+\url{https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html}
 
 This function dispatches on data.frame or character input. Character input
 has to be a file name or the function stops with an error message.
@@ -67,13 +70,19 @@ that's converted to bulk format, then pushed into Elasticsearch. The
 \section{Document IDs}{
 
 Document IDs can be passed in via the \code{doc_ids} paramater when passing
-in data.frame or list, but not with files. If ids not passed to
+in data.frame or list, but not with files. If ids are not passed to
 \code{doc_ids}, we assign document IDs from 1 to length of the object
 (rows of a data.frame, or length of a list). In the future we may allow the
-user to select whether
-they want to assign sequential numeric IDs or to allow Elasticsearch to
-assign IDs, which are UUIDs that are actually sequential, so you still can
-determine an order of your documents.
+user to select whether they want to assign sequential numeric IDs or
+to allow Elasticsearch to assign IDs, which are UUIDs that are actually
+sequential, so you still can determine an order of your documents.
+}
+
+\section{Document IDs and Factors}{
+
+If you pass in ids that are of class factor, we coerce them to character
+with \code{as.character}. This applies to both data.frame and list inputs, but
+not to file inputs.
 }
 
 \section{Large numbers for document IDs}{
@@ -99,22 +108,31 @@ Note also that null values can not be indexed or searched
 
 This function returns the response from Elasticsearch, but you'll likely
 not be that interested in the response. If not, wrap your call to
-\code{docs_bulk} in \code{\link{invisible}}, like so:
-\code{invisible(docs_bulk(...))}
+\code{docs_bulk} in \code{\link[=invisible]{invisible()}}, like so: \code{invisible(docs_bulk(...))}
+}
+
+\section{Connections/Files}{
+
+We create temporary files, and connections to those files, when data.frame's
+and lists are passed in to \code{docs_bulk()} (not when a file is passed in
+since we don't need to create a file). After inserting data into your
+Elasticsearch instance, we close the connections and delete the temporary files.
+
+There are some exceptions though. When you pass in your own file, whether a
+tempfile or not, we don't delete those files after using them - in case
+you need those files again. Your own tempfile's will be cleaned up/delete
+when the R session ends. Non-tempfile's won't be cleaned up/deleted after
+the R session ends.
 }
 
 \examples{
 \dontrun{
+# From a file already in newline delimited JSON format
 plosdat <- system.file("examples", "plos_data.json", package = "elastic")
 docs_bulk(plosdat)
 aliases_get()
 index_delete(index='plos')
 aliases_get()
-
-# Curl options
-library("httr")
-plosdat <- system.file("examples", "plos_data.json", package = "elastic")
-docs_bulk(plosdat, config=verbose())
 
 # From a data.frame
 docs_bulk(mtcars, index = "hello", type = "world")
@@ -198,8 +216,24 @@ res <- data.frame(foo = 1:10)
 out <- docs_bulk(x = res, index = db)
 count(db)
 index_delete(db)
+
+
+
+# Curl options
+library("httr")
+plosdat <- system.file("examples", "plos_data.json", package = "elastic")
+docs_bulk(plosdat, config=verbose())
+
+
+# suppress progress bar
+x <- docs_bulk(mtcars, index = "hello", type = "world", quiet = TRUE)
+## vs. 
+x <- docs_bulk(mtcars, index = "hello", type = "world", quiet = FALSE)
 }
 }
 \seealso{
-\code{\link{docs_bulk_prep}}
+\code{\link[=docs_bulk_prep]{docs_bulk_prep()}} for prepping a newline delimited
+JSON file that you can load into Elasticsearch yourself. See
+\code{\link[=docs_bulk_update]{docs_bulk_update()}} for updating documents from an R data.frame
+or list.
 }

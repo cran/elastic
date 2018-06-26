@@ -103,13 +103,13 @@ If \code{TRUE}, then raw JSON returned}
 to parse JSON directly to a data.frame. If \code{FALSE} (Default), list 
 output is given.}
 
-\item{time_scroll}{(character) Specify how long a consistent view of the 
-index should be maintained for scrolled search, e.g., "30s", "1m". See 
-\code{\link{units-time}}.}
+\item{time_scroll}{(character) Specify how long a consistent view of the
+index should be maintained for scrolled search, e.g., "30s", "1m". See
+\link{units-time}}
 
-\item{search_path}{(character) The path to use for searching. Default 
-to \code{_search}, but in some cases you may already have that in the base 
-url set using \code{\link{connect}}, in which case you can set this 
+\item{search_path}{(character) The path to use for searching. Default
+to \code{_search}, but in some cases you may already have that in the base
+url set using \code{\link[=connect]{connect()}}, in which case you can set this
 to \code{NULL}}
 
 \item{stream_opts}{(list) A list of options passed to 
@@ -774,6 +774,30 @@ body <- '{
 out <- Search('geoshape', body = body)
 out$hits$total
 
+
+# Geofilter with WKT
+# format follows "BBOX (minlon, maxlon, maxlat, minlat)"
+x <- '{
+    "query": {
+        "bool" : {
+            "must" : {
+                "match_all" : {}
+            },
+            "filter" : {
+                "geo_bounding_box" : {
+                    "pin.location" : {
+                        "wkt" : "BBOX (1, 14, 60, 40)"
+                    }
+                }
+            }
+        }
+    }
+}'
+out <- Search('gbifgeopoint', body = body)
+out$hits$total
+
+
+
 # Missing filter
 if (gsub("\\\\.", "", ping()$version$number) < 500) {
   ### ES < v5
@@ -938,7 +962,6 @@ unlink(file)
 \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html}
 }
 \seealso{
-\code{\link{Search_uri}} \code{\link{Search_template}} 
-\code{\link{scroll}} \code{\link{count}} \code{\link{validate}}
-\code{\link{fielddata}}
+\code{\link[=Search_uri]{Search_uri()}} \code{\link[=Search_template]{Search_template()}} \code{\link[=scroll]{scroll()}} \code{\link[=count]{count()}}
+\code{\link[=validate]{validate()}} \code{\link[=fielddata]{fielddata()}}
 }

@@ -47,7 +47,7 @@ test_that("search terminate_after parameter works", {
 test_that("getting json data back from search works", {
 
   suppressMessages(require('jsonlite'))
-  f <- Search_uri(index="shakespeare", type="scene", raw=TRUE)
+  f <- Search_uri(index="shakespeare", type="line", raw=TRUE)
   expect_is(f, "character")
   expect_true(jsonlite::validate(f))
   expect_is(jsonlite::fromJSON(f), "list")
