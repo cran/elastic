@@ -239,20 +239,20 @@ devtools::install_github(&quot;ropensci/elastic&quot;)
 <h2>Install Elasticsearch</h2>
 
 <ul>
-<li><a href="http://www.elastic.co/guide/en/elasticsearch/reference/current/_installation.html">Elasticsearch installation help</a></li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html">Elasticsearch installation help</a></li>
 </ul>
 
 <p><strong>Unix (linux/osx)</strong></p>
 
-<p>Replace <code>5.6.3</code> with the version you are working with.</p>
+<p>Replace <code>6.5.3</code> with the version you are working with.</p>
 
 <ul>
-<li>Download zip or tar file from Elasticsearch <a href="https://www.elastic.co/downloads">see here for download</a>, e.g., <code>curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.3.tar.gz</code></li>
-<li>Extract: <code>tar -zxvf elasticsearch-5.6.3.tar.gz</code></li>
-<li>Move it: <code>sudo mv elasticsearch-5.6.3 /usr/local</code></li>
+<li>Download zip or tar file from Elasticsearch <a href="https://www.elastic.co/downloads">see here for download</a>, e.g., <code>curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.5.3.tar.gz</code></li>
+<li>Extract: <code>tar -zxvf elasticsearch-6.5.3.tar.gz</code></li>
+<li>Move it: <code>sudo mv elasticsearch-6.5.3 /usr/local</code></li>
 <li>Navigate to /usr/local: <code>cd /usr/local</code></li>
 <li>Delete symlinked <code>elasticsearch</code> directory: <code>rm -rf elasticsearch</code></li>
-<li>Add shortcut: <code>sudo ln -s elasticsearch-5.6.3 elasticsearch</code> (replace version with your version)</li>
+<li>Add shortcut: <code>sudo ln -s elasticsearch-6.5.3 elasticsearch</code> (replace version with your version)</li>
 </ul>
 
 <p>On OSX, you can install via Homebrew: <code>brew install elasticsearch</code></p>
@@ -276,17 +276,20 @@ devtools::install_github(&quot;ropensci/elastic&quot;)
 
 <p>The function <code>connect()</code> is used before doing anything else to set the connection details to your remote or local elasticsearch store. The details created by <code>connect()</code> are written to your options for the current session, and are used by <code>elastic</code> functions.</p>
 
-<pre><code class="r">connect()
+<pre><code class="r">x &lt;- connect()
+x
 </code></pre>
 
-<pre><code>#&gt; transport:  http 
-#&gt; host:       127.0.0.1 
-#&gt; port:       9200 
-#&gt; path:       NULL 
-#&gt; username:   NULL 
-#&gt; password:   &lt;secret&gt; 
-#&gt; errors:     simple 
-#&gt; headers (names):  NULL
+<pre><code>#&gt; &lt;Elasticsearch Connection&gt; 
+#&gt;   transport:  http 
+#&gt;   host:       127.0.0.1 
+#&gt;   port:       9200 
+#&gt;   path:       NULL 
+#&gt;   username:   NULL 
+#&gt;   password:   NULL 
+#&gt;   errors:     simple 
+#&gt;   headers (names):   
+#&gt;   cainfo:  NULL
 </code></pre>
 
 <p>On package load, your base url and port are set to <code>http://127.0.0.1</code> and <code>9200</code>, respectively. You can of course override these settings per session or for all sessions.</p>
@@ -306,7 +309,7 @@ devtools::install_github(&quot;ropensci/elastic&quot;)
 
 <p>Then load the data into Elasticsearch:</p>
 
-<pre><code class="r">docs_bulk(shakespeare)
+<pre><code class="r">docs_bulk(x, shakespeare)
 </code></pre>
 
 <p>If you need some big data to play with, the shakespeare dataset is a good one to start with. You can get the whole thing and pop it into Elasticsearch (beware, may take up to 10 minutes or so.):</p>
@@ -320,7 +323,7 @@ curl -XPUT localhost:9200/_bulk --data-binary @shakespeare.json
 <p>A dataset inluded in the <code>elastic</code> package is metadata for PLOS scholarly articles. Get the file path, then load:</p>
 
 <pre><code class="r">plosdat &lt;- system.file(&quot;examples&quot;, &quot;plos_data.json&quot;, package = &quot;elastic&quot;)
-docs_bulk(plosdat)
+docs_bulk(x, plosdat)
 </code></pre>
 
 <h3>Global Biodiversity Information Facility (GBIF) data</h3>
@@ -328,13 +331,13 @@ docs_bulk(plosdat)
 <p>A dataset inluded in the <code>elastic</code> package is data for GBIF species occurrence records. Get the file path, then load:</p>
 
 <pre><code class="r">gbifdat &lt;- system.file(&quot;examples&quot;, &quot;gbif_data.json&quot;, package = &quot;elastic&quot;)
-docs_bulk(gbifdat)
+docs_bulk(x, gbifdat)
 </code></pre>
 
 <p>GBIF geo data with a coordinates element to allow <code>geo_shape</code> queries</p>
 
 <pre><code class="r">gbifgeo &lt;- system.file(&quot;examples&quot;, &quot;gbif_geo.json&quot;, package = &quot;elastic&quot;)
-docs_bulk(gbifgeo)
+docs_bulk(x, gbifgeo)
 </code></pre>
 
 <h3>More data sets</h3>
@@ -345,7 +348,7 @@ docs_bulk(gbifgeo)
 
 <p>Search the <code>plos</code> index and only return 1 result</p>
 
-<pre><code class="r">Search(index=&quot;plos&quot;, size=1)$hits$hits
+<pre><code class="r">Search(x, index=&quot;plos&quot;, size=1)$hits$hits
 </code></pre>
 
 <pre><code>#&gt; [[1]]
@@ -371,7 +374,7 @@ docs_bulk(gbifgeo)
 
 <p>Search the <code>plos</code> index, and the <code>article</code> document type, and query for <em>antibody</em>, limit to 1 result</p>
 
-<pre><code class="r">Search(index=&quot;plos&quot;, type=&quot;article&quot;, q=&quot;antibody&quot;, size=1)$hits$hits
+<pre><code class="r">Search(x, index=&quot;plos&quot;, type=&quot;article&quot;, q=&quot;antibody&quot;, size=1)$hits$hits
 </code></pre>
 
 <pre><code>#&gt; [[1]]
@@ -382,24 +385,24 @@ docs_bulk(gbifgeo)
 #&gt; [1] &quot;article&quot;
 #&gt; 
 #&gt; [[1]]$`_id`
-#&gt; [1] &quot;568&quot;
+#&gt; [1] &quot;216&quot;
 #&gt; 
 #&gt; [[1]]$`_score`
-#&gt; [1] 4.165291
+#&gt; [1] 4.423327
 #&gt; 
 #&gt; [[1]]$`_source`
 #&gt; [[1]]$`_source`$id
-#&gt; [1] &quot;10.1371/journal.pone.0085002&quot;
+#&gt; [1] &quot;10.1371/journal.pone.0107664&quot;
 #&gt; 
 #&gt; [[1]]$`_source`$title
-#&gt; [1] &quot;Evaluation of 131I-Anti-Angiotensin II Type 1 Receptor Monoclonal Antibody as a Reporter for Hepatocellular Carcinoma&quot;
+#&gt; [1] &quot;Antibody-Validated Proteins in Inflamed Islets of Fulminant Type 1 Diabetes Profiled by Laser-Capture Microdissection Followed by Mass Spectrometry&quot;
 </code></pre>
 
 <h2>Get documents</h2>
 
 <p>Get document with <code>id=1</code></p>
 
-<pre><code class="r">docs_get(index=&#39;plos&#39;, type=&#39;article&#39;, id=1)
+<pre><code class="r">docs_get(x, index=&#39;plos&#39;, type=&#39;article&#39;, id=1)
 </code></pre>
 
 <pre><code>#&gt; $`_index`
@@ -427,7 +430,7 @@ docs_bulk(gbifgeo)
 
 <p>Get certain fields</p>
 
-<pre><code class="r">docs_get(index=&#39;plos&#39;, type=&#39;article&#39;, id=1, fields=&#39;id&#39;)
+<pre><code class="r">docs_get(x, index=&#39;plos&#39;, type=&#39;article&#39;, id=1, fields=&#39;id&#39;)
 </code></pre>
 
 <pre><code>#&gt; $`_index`
@@ -450,7 +453,7 @@ docs_bulk(gbifgeo)
 
 <p>Same index and type, different document ids</p>
 
-<pre><code class="r">docs_mget(index=&quot;plos&quot;, type=&quot;article&quot;, id=3:4)
+<pre><code class="r">docs_mget(x, index=&quot;plos&quot;, type=&quot;article&quot;, id=3:4)
 </code></pre>
 
 <pre><code>#&gt; $docs
@@ -505,7 +508,7 @@ docs_bulk(gbifgeo)
 
 <p>Different indeces, types, and ids</p>
 
-<pre><code class="r">docs_mget(index_type_id=list(c(&quot;plos&quot;,&quot;article&quot;,1), c(&quot;gbif&quot;,&quot;record&quot;,1)))$docs[[1]]
+<pre><code class="r">docs_mget(x, index_type_id=list(c(&quot;plos&quot;,&quot;article&quot;,1), c(&quot;gbif&quot;,&quot;record&quot;,1)))$docs[[1]]
 </code></pre>
 
 <pre><code>#&gt; $`_index`
@@ -537,7 +540,7 @@ docs_bulk(gbifgeo)
 
 <p>For example:</p>
 
-<pre><code class="r">(out &lt;- docs_mget(index=&quot;plos&quot;, type=&quot;article&quot;, id=5:6, raw=TRUE))
+<pre><code class="r">(out &lt;- docs_mget(x, index=&quot;plos&quot;, type=&quot;article&quot;, id=5:6, raw=TRUE))
 </code></pre>
 
 <pre><code>#&gt; [1] &quot;{\&quot;docs\&quot;:[{\&quot;_index\&quot;:\&quot;plos\&quot;,\&quot;_type\&quot;:\&quot;article\&quot;,\&quot;_id\&quot;:\&quot;5\&quot;,\&quot;_version\&quot;:1,\&quot;found\&quot;:true,\&quot;_source\&quot;:{\&quot;id\&quot;:\&quot;10.1371/journal.pone.0085123\&quot;,\&quot;title\&quot;:\&quot;MiR-21 Is under Control of STAT5 but Is Dispensable for Mammary Development and Lactation\&quot;}},{\&quot;_index\&quot;:\&quot;plos\&quot;,\&quot;_type\&quot;:\&quot;article\&quot;,\&quot;_id\&quot;:\&quot;6\&quot;,\&quot;_version\&quot;:1,\&quot;found\&quot;:true,\&quot;_source\&quot;:{\&quot;id\&quot;:\&quot;10.1371/journal.pone.0098600\&quot;,\&quot;title\&quot;:\&quot;Correction: Designing Mixed Species Tree Plantations for the Tropics: Balancing Ecological Attributes of Species with Landholder Preferences in the Philippines\&quot;}}]}&quot;

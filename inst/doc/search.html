@@ -222,9 +222,12 @@ hr {
 
 <p>There are a huge amount of ways you can search Elasticsearch documents - this tutorial covers some of them, and highlights the ways in which you interact with the R outputs.</p>
 
+<pre><code class="r">x &lt;- connect()
+</code></pre>
+
 <h3>Search an index</h3>
 
-<pre><code class="r">out &lt;- Search(index=&quot;shakespeare&quot;)
+<pre><code class="r">out &lt;- Search(x, index=&quot;shakespeare&quot;)
 out$hits$total
 </code></pre>
 
@@ -238,7 +241,7 @@ out$hits$total
 #&gt; [1] &quot;shakespeare&quot;
 #&gt; 
 #&gt; $`_type`
-#&gt; [1] &quot;act&quot;
+#&gt; [1] &quot;line&quot;
 #&gt; 
 #&gt; $`_id`
 #&gt; [1] &quot;0&quot;
@@ -265,14 +268,14 @@ out$hits$total
 
 <h3>Search an index by type</h3>
 
-<pre><code class="r">Search(index = &quot;shakespeare&quot;, type = &quot;act&quot;)$hits$hits[[1]]
+<pre><code class="r">Search(x, index = &quot;shakespeare&quot;, type = &quot;line&quot;)$hits$hits[[1]]
 </code></pre>
 
 <pre><code>#&gt; $`_index`
 #&gt; [1] &quot;shakespeare&quot;
 #&gt; 
 #&gt; $`_type`
-#&gt; [1] &quot;act&quot;
+#&gt; [1] &quot;line&quot;
 #&gt; 
 #&gt; $`_id`
 #&gt; [1] &quot;0&quot;
@@ -299,7 +302,7 @@ out$hits$total
 
 <h3>Return certain fields</h3>
 
-<pre><code class="r">Search(index = &quot;shakespeare&quot;, body = &#39;{
+<pre><code class="r">Search(x, index = &quot;shakespeare&quot;, body = &#39;{
   &quot;_source&quot;: [&quot;play_name&quot;, &quot;speaker&quot;]
 }&#39;)$hits$hits[[1]]
 </code></pre>
@@ -308,7 +311,7 @@ out$hits$total
 #&gt; [1] &quot;shakespeare&quot;
 #&gt; 
 #&gt; $`_type`
-#&gt; [1] &quot;act&quot;
+#&gt; [1] &quot;line&quot;
 #&gt; 
 #&gt; $`_id`
 #&gt; [1] &quot;0&quot;
@@ -326,7 +329,7 @@ out$hits$total
 
 <h3>Paging</h3>
 
-<pre><code class="r">Search(index=&quot;shakespeare&quot;, size=1, from=1)$hits
+<pre><code class="r">Search(x, index=&quot;shakespeare&quot;, size=1, from=1)$hits
 </code></pre>
 
 <pre><code>#&gt; $total
@@ -373,17 +376,17 @@ out$hits$total
 
 <p>Using the <code>q</code> parameter you can pass in a query, which gets passed in the URI of the query. This type of query is less powerful than the below query passed in the body of the request, using the <code>body</code> parameter.</p>
 
-<pre><code class="r">Search(index=&quot;shakespeare&quot;, type=&quot;act&quot;, q=&quot;speaker:KING HENRY IV&quot;)$hits$total
+<pre><code class="r">Search(x, index=&quot;shakespeare&quot;, type=&quot;line&quot;, q=&quot;speaker:KING HENRY IV&quot;)$hits$total
 </code></pre>
 
-<pre><code>#&gt; [1] 9
+<pre><code>#&gt; [1] 5000
 </code></pre>
 
 <h4>More complex queries</h4>
 
 <p>Here, query for values from 10 to 20 in the field <code>line_id</code></p>
 
-<pre><code class="r">Search(index=&quot;shakespeare&quot;, q=&quot;line_id:[10 TO 20]&quot;)$hits$total
+<pre><code class="r">Search(x, index=&quot;shakespeare&quot;, q=&quot;line_id:[10 TO 20]&quot;)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 11
@@ -393,33 +396,32 @@ out$hits$total
 
 <p>Version number usually is not returned.</p>
 
-<pre><code class="r">sapply(Search(index=&quot;shakespeare&quot;, version=TRUE, size=2)$hits$hits, &quot;[[&quot;, &quot;_version&quot;)
+<pre><code class="r">sapply(Search(x, index=&quot;shakespeare&quot;, version=TRUE, size=2)$hits$hits, &quot;[[&quot;, &quot;_version&quot;)
 </code></pre>
 
-<pre><code>#&gt; [1] 1 1
+<pre><code>#&gt; [1] 3 4
 </code></pre>
 
 <h3>Get raw data</h3>
 
-<pre><code class="r">Search(index=&quot;shakespeare&quot;, type=&quot;scene&quot;, raw=TRUE)
+<pre><code class="r">Search(x, index=&quot;shakespeare&quot;, type=&quot;line&quot;, raw=TRUE)
 </code></pre>
 
-<pre><code>#&gt; [1] &quot;{\&quot;took\&quot;:2,\&quot;timed_out\&quot;:false,\&quot;_shards\&quot;:{\&quot;total\&quot;:5,\&quot;successful\&quot;:5,\&quot;skipped\&quot;:0,\&quot;failed\&quot;:0},\&quot;hits\&quot;:{\&quot;total\&quot;:34,\&quot;max_score\&quot;:1.0,\&quot;hits\&quot;:[{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;646\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:647,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:54,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;HOTSPUR\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. Rochester. An inn yard.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;1829\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:1830,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:74,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;MORTIMER\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE II. London. The palace.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;2588\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:2589,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:28,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;SIR WALTER BLUNT\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE IV. York. The ARCHBISHOPS palace.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;3156\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:3157,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:37,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;FALSTAFF\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE V. Another part of the field.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;3870\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:3871,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:5,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;CHARLES\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. Before Orleans.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4031\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4032,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:12,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;Captain\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE III. Auvergne. The COUNTESSs castle.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4294\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4295,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:47,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;PLANTAGENET\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE V. The Tower of London.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4923\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4924,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:24,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;CHARLES\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE IV. Paris. The palace.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;4975\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:4976,\&quot;play_name\&quot;:\&quot;Henry VI Part 1\&quot;,\&quot;speech_number\&quot;:11,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;VERNON\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE I. Paris. A hall of state.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;scene\&quot;,\&quot;_id\&quot;:\&quot;324\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:325,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:62,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;PRINCE HENRY\&quot;,\&quot;text_entry\&quot;:\&quot;SCENE III. London. The palace.\&quot;}}]}}&quot;
+<pre><code>#&gt; [1] &quot;{\&quot;took\&quot;:0,\&quot;timed_out\&quot;:false,\&quot;_shards\&quot;:{\&quot;total\&quot;:5,\&quot;successful\&quot;:5,\&quot;skipped\&quot;:0,\&quot;failed\&quot;:0},\&quot;hits\&quot;:{\&quot;total\&quot;:5000,\&quot;max_score\&quot;:1.0,\&quot;hits\&quot;:[{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;0\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:1,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;line_number\&quot;:\&quot;\&quot;,\&quot;speaker\&quot;:\&quot;\&quot;,\&quot;text_entry\&quot;:\&quot;ACT I\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;14\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:15,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:1,\&quot;line_number\&quot;:\&quot;1.1.12\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;Did lately meet in the intestine shock\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;19\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:20,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:1,\&quot;line_number\&quot;:\&quot;1.1.17\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;The edge of war, like an ill-sheathed knife,\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;22\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:23,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:1,\&quot;line_number\&quot;:\&quot;1.1.20\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;Whose soldier now, under whose blessed cross\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;24\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:25,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:1,\&quot;line_number\&quot;:\&quot;1.1.22\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;Forthwith a power of English shall we levy;\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;25\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:26,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:1,\&quot;line_number\&quot;:\&quot;1.1.23\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;Whose arms were moulded in their mothers womb\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;26\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:27,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:1,\&quot;line_number\&quot;:\&quot;1.1.24\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;To chase these pagans in those holy fields\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;29\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:30,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:1,\&quot;line_number\&quot;:\&quot;1.1.27\&quot;,\&quot;speaker\&quot;:\&quot;KING HENRY IV\&quot;,\&quot;text_entry\&quot;:\&quot;For our advantage on the bitter cross.\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;40\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:41,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:2,\&quot;line_number\&quot;:\&quot;1.1.38\&quot;,\&quot;speaker\&quot;:\&quot;WESTMORELAND\&quot;,\&quot;text_entry\&quot;:\&quot;Whose worst was, that the noble Mortimer,\&quot;}},{\&quot;_index\&quot;:\&quot;shakespeare\&quot;,\&quot;_type\&quot;:\&quot;line\&quot;,\&quot;_id\&quot;:\&quot;41\&quot;,\&quot;_score\&quot;:1.0,\&quot;_source\&quot;:{\&quot;line_id\&quot;:42,\&quot;play_name\&quot;:\&quot;Henry IV\&quot;,\&quot;speech_number\&quot;:2,\&quot;line_number\&quot;:\&quot;1.1.39\&quot;,\&quot;speaker\&quot;:\&quot;WESTMORELAND\&quot;,\&quot;text_entry\&quot;:\&quot;Leading the men of Herefordshire to fight\&quot;}}]}}&quot;
 </code></pre>
 
 <h3>Curl debugging</h3>
 
-<p>Common options are <code>verbose()</code>, <code>timeout()</code>, <code>progress()</code>, <code>config(followlocation=TRUE)</code>.</p>
+<p>Common options are <code>verbose=TRUE</code>, <code>timeout_ms=1</code>, <code>followlocation=TRUE</code>.</p>
 
-<pre><code class="r">library(&#39;httr&#39;)
-out &lt;- Search(index=&quot;shakespeare&quot;, type=&quot;line&quot;, config=verbose())
+<pre><code class="r">out &lt;- Search(x, index=&quot;shakespeare&quot;, type=&quot;line&quot;, verbose = TRUE)
 </code></pre>
 
 <h3>Query DSL searches - queries sent in the body of the request</h3>
 
 <p>Pass in as an R list</p>
 
-<pre><code class="r">mapping_create(&quot;shakespeare&quot;, &quot;act&quot;, update_all_types = TRUE, body = &#39;{
+<pre><code class="r">mapping_create(x, &quot;shakespeare&quot;, &quot;line&quot;, update_all_types = TRUE, body = &#39;{
    &quot;properties&quot;: {
      &quot;text_entry&quot;: {
        &quot;type&quot;:     &quot;text&quot;,
@@ -434,14 +436,14 @@ out &lt;- Search(index=&quot;shakespeare&quot;, type=&quot;line&quot;, config=ve
 </code></pre>
 
 <pre><code class="r">aggs &lt;- list(aggs = list(stats = list(terms = list(field = &quot;text_entry&quot;))))
-Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
+Search(x, index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
 </code></pre>
 
 <pre><code>#&gt; $`_index`
 #&gt; [1] &quot;shakespeare&quot;
 #&gt; 
 #&gt; $`_type`
-#&gt; [1] &quot;act&quot;
+#&gt; [1] &quot;line&quot;
 #&gt; 
 #&gt; $`_id`
 #&gt; [1] &quot;0&quot;
@@ -477,14 +479,14 @@ Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
         }
     }
 }&#39;
-Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
+Search(x, index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
 </code></pre>
 
 <pre><code>#&gt; $`_index`
 #&gt; [1] &quot;shakespeare&quot;
 #&gt; 
 #&gt; $`_type`
-#&gt; [1] &quot;act&quot;
+#&gt; [1] &quot;line&quot;
 #&gt; 
 #&gt; $`_id`
 #&gt; [1] &quot;0&quot;
@@ -512,14 +514,14 @@ Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
 <p>Or pass in collapsed json string</p>
 
 <pre><code class="r">aggs &lt;- &#39;{&quot;aggs&quot;:{&quot;stats&quot;:{&quot;terms&quot;:{&quot;field&quot;:&quot;text_entry&quot;}}}}&#39;
-Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
+Search(x, index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
 </code></pre>
 
 <pre><code>#&gt; $`_index`
 #&gt; [1] &quot;shakespeare&quot;
 #&gt; 
 #&gt; $`_type`
-#&gt; [1] &quot;act&quot;
+#&gt; [1] &quot;line&quot;
 #&gt; 
 #&gt; $`_id`
 #&gt; [1] &quot;0&quot;
@@ -558,7 +560,7 @@ Search(index=&quot;shakespeare&quot;, body=aggs)$hits$hits[[1]]
         }
     }
 }&#39;
-Search(index=&quot;gbif&quot;, body=aggs, size=0)$aggregations$latbuckets$buckets[1:3]
+Search(x, index=&quot;gbif&quot;, body=aggs, size=0)$aggregations$latbuckets$buckets[1:3]
 </code></pre>
 
 <pre><code>#&gt; [[1]]
@@ -595,7 +597,7 @@ Search(index=&quot;gbif&quot;, body=aggs, size=0)$aggregations$latbuckets$bucket
          &quot;speech_number&quot; : {
            &quot;from&quot; : 1, &quot;to&quot;: 5
 }}}}}}&#39;
-sapply(Search(index=&quot;shakespeare&quot;, body=mmatch)$hits$hits, function(x) x$`_source`$speech_number)
+sapply(Search(x, index=&quot;shakespeare&quot;, body=mmatch)$hits$hits, function(x) x$`_source`$speech_number)
 </code></pre>
 
 <pre><code>#&gt; [[1]]
@@ -634,14 +636,14 @@ sapply(Search(index=&quot;shakespeare&quot;, body=mmatch)$hits$hits, function(x)
 <p>Fuzzy query on numerics</p>
 
 <pre><code class="r">fuzzy &lt;- list(query = list(fuzzy = list(text_entry = &quot;arms&quot;)))
-Search(index=&quot;shakespeare&quot;, body = fuzzy)$hits$total
+Search(x, index=&quot;shakespeare&quot;, body = fuzzy)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 49
 </code></pre>
 
 <pre><code class="r">fuzzy &lt;- list(query = list(fuzzy = list(text_entry = list(value = &quot;arms&quot;, fuzziness = 4))))
-Search(index=&quot;shakespeare&quot;, body=fuzzy)$hits$total
+Search(x, index=&quot;shakespeare&quot;, body=fuzzy)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 617
@@ -652,14 +654,14 @@ Search(index=&quot;shakespeare&quot;, body=fuzzy)$hits$total
 <p>With numeric</p>
 
 <pre><code class="r">body &lt;- list(query=list(range=list(decimalLongitude=list(gte=1, lte=3))))
-Search(&#39;gbif&#39;, body=body)$hits$total
+Search(x, &#39;gbif&#39;, body=body)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 24
 </code></pre>
 
 <pre><code class="r">body &lt;- list(query=list(range=list(decimalLongitude=list(gte=2.9, lte=10))))
-Search(&#39;gbif&#39;, body=body)$hits$total
+Search(x, &#39;gbif&#39;, body=body)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 126
@@ -668,17 +670,17 @@ Search(&#39;gbif&#39;, body=body)$hits$total
 <p>With dates</p>
 
 <pre><code class="r">body &lt;- list(query=list(range=list(eventDate=list(gte=&quot;2012-01-01&quot;, lte=&quot;now&quot;))))
-Search(&#39;gbif&#39;, body=body)$hits$total
+Search(x, &#39;gbif&#39;, body=body)$hits$total
 </code></pre>
 
-<pre><code>#&gt; [1] 300
+<pre><code>#&gt; [1] 301
 </code></pre>
 
 <pre><code class="r">body &lt;- list(query=list(range=list(eventDate=list(gte=&quot;2014-01-01&quot;, lte=&quot;now&quot;))))
-Search(&#39;gbif&#39;, body=body)$hits$total
+Search(x, &#39;gbif&#39;, body=body)$hits$total
 </code></pre>
 
-<pre><code>#&gt; [1] 291
+<pre><code>#&gt; [1] 292
 </code></pre>
 
 <h3>More-like-this query (more_like_this can be shortened to mlt)</h3>
@@ -687,13 +689,13 @@ Search(&#39;gbif&#39;, body=body)$hits$total
  &quot;query&quot;: {
    &quot;more_like_this&quot;: {
      &quot;fields&quot;: [&quot;abstract&quot;,&quot;title&quot;],
-     &quot;like_text&quot;: &quot;and then&quot;,
+     &quot;like&quot;: &quot;and then&quot;,
      &quot;min_term_freq&quot;: 1,
      &quot;max_query_terms&quot;: 12
    }
  }
 }&#39;
-Search(&#39;plos&#39;, body=body)$hits$total
+Search(x, &#39;plos&#39;, body=body)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 488
@@ -703,13 +705,13 @@ Search(&#39;plos&#39;, body=body)$hits$total
  &quot;query&quot;: {
    &quot;more_like_this&quot;: {
      &quot;fields&quot;: [&quot;abstract&quot;,&quot;title&quot;],
-     &quot;like_text&quot;: &quot;cell&quot;,
+     &quot;like&quot;: &quot;cell&quot;,
      &quot;min_term_freq&quot;: 1,
      &quot;max_query_terms&quot;: 12
    }
  }
 }&#39;
-Search(&#39;plos&#39;, body=body)$hits$total
+Search(x, &#39;plos&#39;, body=body)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 58
@@ -729,7 +731,7 @@ Search(&#39;plos&#39;, body=body)$hits$total
    }
  }
 }&#39;
-out &lt;- Search(&#39;plos&#39;, &#39;article&#39;, body=body)
+out &lt;- Search(x, &#39;plos&#39;, &#39;article&#39;, body=body)
 out$hits$total
 </code></pre>
 
@@ -739,36 +741,31 @@ out$hits$total
 <pre><code class="r">sapply(out$hits$hits, function(x) x$highlight$title[[1]])[8:10]
 </code></pre>
 
-<pre><code>#&gt; [[1]]
-#&gt; NULL
-#&gt; 
-#&gt; [[2]]
-#&gt; NULL
-#&gt; 
-#&gt; [[3]]
-#&gt; NULL
+<pre><code>#&gt; [1] &quot;Chronic Hypoxia Promotes Pulmonary Artery Endothelial &lt;em&gt;Cell&lt;/em&gt; Proliferation through H2O2-Induced 5-Lipoxygenase&quot;  
+#&gt; [2] &quot;Dynamic Visualization of Dendritic &lt;em&gt;Cell&lt;/em&gt;-Antigen Interactions in the Skin Following Transcutaneous Immunization&quot;
+#&gt; [3] &quot;A New Class of Pluripotent Stem &lt;em&gt;Cell&lt;/em&gt; Cytotoxic Small Molecules&quot;
 </code></pre>
 
 <h3>Scrolling search - instead of paging</h3>
 
-<pre><code class="r">Search(&#39;shakespeare&#39;, q=&quot;a*&quot;)$hits$total
+<pre><code class="r">Search(x, &#39;shakespeare&#39;, q=&quot;a*&quot;)$hits$total
 </code></pre>
 
 <pre><code>#&gt; [1] 2747
 </code></pre>
 
-<pre><code class="r">res &lt;- Search(index = &#39;shakespeare&#39;, q=&quot;a*&quot;, time_scroll = &quot;1m&quot;)
-length(scroll(res$`_scroll_id`)$hits$hits)
+<pre><code class="r">res &lt;- Search(x, index = &#39;shakespeare&#39;, q=&quot;a*&quot;, time_scroll = &quot;1m&quot;)
+length(scroll(x, res$`_scroll_id`, time_scroll = &quot;1m&quot;)$hits$hits)
 </code></pre>
 
 <pre><code>#&gt; [1] 10
 </code></pre>
 
-<pre><code class="r">res &lt;- Search(index = &#39;shakespeare&#39;, q = &quot;a*&quot;, time_scroll = &quot;5m&quot;)
-out &lt;- list()
+<pre><code class="r">res &lt;- Search(x, index = &#39;shakespeare&#39;, q = &quot;a*&quot;, time_scroll = &quot;5m&quot;)
+out &lt;- res$hits$hits
 hits &lt;- 1
 while (hits != 0) {
-  res &lt;- scroll(res$`_scroll_id`)
+  res &lt;- scroll(x, res$`_scroll_id`)
   hits &lt;- length(res$hits$hits)
   if (hits &gt; 0)
     out &lt;- c(out, res$hits$hits)
@@ -776,10 +773,16 @@ while (hits != 0) {
 length(out)
 </code></pre>
 
-<pre><code>#&gt; [1] 2737
+<pre><code>#&gt; [1] 2747
 </code></pre>
 
-<p>Woohoo! Collected all 2737 documents in very little time.</p>
+<pre><code class="r">res$hits$total
+</code></pre>
+
+<pre><code>#&gt; [1] 2747
+</code></pre>
+
+<p>Woohoo! Collected all 2747 documents in very little time.</p>
 
 </body>
 
