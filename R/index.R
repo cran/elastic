@@ -7,6 +7,8 @@
 #'
 #' @param conn an Elasticsearch connection object, see [connect()]
 #' @param index (character) A character vector of index names
+#' @param index_new (character) an index name, required. only applies to
+#' index_shrink method
 #' @param features (character) A single feature. One of settings, mappings, or
 #' aliases
 #' @param raw If `TRUE` (default), data is parsed to list. If FALSE, then raw JSON.
@@ -151,10 +153,8 @@
 #' ## with mappings
 #' body <- '{
 #'  "mappings": {
-#'    "record": {
-#'      "properties": {
-#'        "location" : {"type" : "geo_point"}
-#'       }
+#'    "properties": {
+#'      "location" : {"type" : "geo_point"}
 #'    }
 #'  }
 #' }'
@@ -278,6 +278,20 @@
 #' settings <- list(index = list(number_of_replicas = 4))
 #' index_settings_update(x, "foobar", body = settings)
 #' index_get(x, "foobar")$foobar$settings
+#' 
+#' # Shrink index - Can only shrink an index if it has >1 shard
+#' ## index must be read only, a copy of every shard in the index must
+#' ## reside on the same node, and the cluster health status must be green
+#' ### index_settings_update call to change these
+#' settings <- list(
+#'   index.routing.allocation.require._name = "shrink_node_name",
+#'   index.blocks.write = "true"
+#' )
+#' if (index_exists(x, 'barbarbar')) index_delete(x, 'barbarbar')
+#' index_create(x, "barbarbar")
+#' index_settings_update(x, "barbarbar", body = settings)
+#' cat_recovery(x, index='barbarbar')
+#' # index_shrink(x, "barbarbar", "barfoobbar")
 #' }
 NULL
 
@@ -296,6 +310,7 @@ index_exists <- function(conn, index, ...) {
   is_conn(conn)
   url <- file.path(conn$make_url(), esc(index))
   res <- conn$make_conn(url, ...)$head()
+  if (conn$warn) catch_warnings(res)
   if (res$status_code == 200) TRUE else FALSE
 }
 
@@ -307,6 +322,7 @@ index_delete <- function(conn, index, raw=FALSE, verbose=TRUE, ...) {
   out <- conn$make_conn(url, ...)$delete()
   if (verbose) message(URLdecode(out$url))
   geterror(conn, out)
+  if (conn$warn) catch_warnings(out)
   tt <- structure(out$parse('UTF-8'), class = "index_delete")
   if (raw) tt else es_parse(tt)
 }
@@ -471,15 +487,17 @@ index_analyze <- function(conn, text=NULL, field=NULL, index=NULL, analyzer=NULL
     url <- sprintf("%s/_analyze", url)
   }
 
+  if (!is.null(filters)) filters <- I(filters)
+  if (!is.null(char_filters)) char_filters <- I(char_filters)
   if (conn$es_ver() >= 500) {
     body <- ec(list(text = text, analyzer = analyzer, tokenizer = tokenizer,
-                 filter = I(filters), char_filter = I(char_filters),
+                 filter = filters, char_filter = char_filters,
                  field = field))
     args <- list()
   } else {
     body <- list()
     args <- ec(list(text = text, analyzer = analyzer, tokenizer = tokenizer,
-                    filters = I(filters), char_filters = I(char_filters),
+                    filters = filters, char_filters = char_filters,
                     field = field))
   }
 
@@ -523,6 +541,15 @@ index_clear_cache <- function(conn, index=NULL, filter=FALSE, filter_keys=NULL,
   cc_POST(conn, url, args, ...)
 }
 
+#' @export
+#' @rdname indices
+index_shrink <- function(conn, index, index_new, body = NULL, ...) {
+  is_conn(conn)
+  url <- conn$make_url()
+  url <- sprintf("%s/%s/_shrink/%s", url, esc(cl(index)), esc(cl(index_new)))
+  body <- check_inputs(body)
+  cc_POST(conn, url, body, ...)
+}
 
 
 ###### HELPERS
@@ -531,6 +558,7 @@ close_open <- function(conn, index, which, ...) {
   url <- sprintf("%s/%s/%s", url, esc(index), which)
   out <- conn$make_conn(url, ...)$post()
   geterror(conn, out)
+  if (conn$warn) catch_warnings(out)
   jsonlite::fromJSON(out$parse("UTF-8"), FALSE)
 }
 
@@ -553,6 +581,7 @@ es_POST_ <- function(conn, index, which, args=NULL, ...) {
   }
   tt <- conn$make_conn(url, ...)$post(query = args)
   geterror(conn, tt)
+  if (conn$warn) catch_warnings(tt)
   jsonlite::fromJSON(tt$parse('UTF-8'), FALSE)
 }
 
@@ -560,11 +589,13 @@ analyze_POST <- function(conn, url, args = NULL, body, ...) {
   body <- check_inputs(body)
   out <- conn$make_conn(url, json_type(), ...)$post(query = args, body = body)
   geterror(conn, out)
+  if (conn$warn) catch_warnings(out)
   jsonlite::fromJSON(out$parse("UTF-8"))
 }
 
 cc_POST <- function(conn, url, args = NULL, ...) {
   tt <- conn$make_conn(url, ...)$post(body = args, encode = "json")
   if (tt$status_code > 202) geterror(conn, tt)
+  if (conn$warn) catch_warnings(tt)
   jsonlite::fromJSON(res <- tt$parse("UTF-8"), FALSE)
 }

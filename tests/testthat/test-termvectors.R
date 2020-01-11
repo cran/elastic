@@ -1,6 +1,6 @@
 context("termvectors")
 
-x <- connect()
+x <- connect(warn = FALSE)
 
 if (!index_exists(x, 'omdb')) {
   omdb <- system.file("examples", "omdb.json", package = "elastic")
@@ -42,7 +42,7 @@ test_that("termvectors fails well", {
   if (gsub("\\.", "", x$ping()$version$number) < 130) skip('feature not in this ES version')
 
   expect_error(termvectors(x), "argument \"index\" is missing")
-  expect_error(termvectors(x, "omdb"), "argument \"type\" is missing")
+  # expect_error(termvectors(x, "omdb"), "argument \"type\" is missing")
   expect_error(termvectors(x, "omdb", "omdb"), "Validation Failed")
 
   body <- '{

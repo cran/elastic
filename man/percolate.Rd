@@ -9,13 +9,31 @@
 \alias{percolate_delete}
 \title{Percolater}
 \usage{
-percolate_register(conn, index, type, id, body = list(),
-  routing = NULL, preference = NULL, ignore_unavailable = NULL,
-  percolate_format = NULL, refresh = NULL, ...)
+percolate_register(
+  conn,
+  index,
+  id,
+  type = NULL,
+  body = list(),
+  routing = NULL,
+  preference = NULL,
+  ignore_unavailable = NULL,
+  percolate_format = NULL,
+  refresh = NULL,
+  ...
+)
 
-percolate_match(conn, index, type = NULL, body, routing = NULL,
-  preference = NULL, ignore_unavailable = NULL,
-  percolate_format = NULL, ...)
+percolate_match(
+  conn,
+  index,
+  type = NULL,
+  body,
+  routing = NULL,
+  preference = NULL,
+  ignore_unavailable = NULL,
+  percolate_format = NULL,
+  ...
+)
 
 percolate_list(conn, index, ...)
 
@@ -28,9 +46,9 @@ percolate_delete(conn, index, id, ...)
 
 \item{index}{Index name. Required}
 
-\item{type}{Document type. Required}
-
 \item{id}{A precolator id. Required}
+
+\item{type}{Document type. Required}
 
 \item{body}{Body json, or R list.}
 
@@ -180,7 +198,7 @@ percolate_delete(x, index = "myindex", id = 2)
 
 
 ##### Elasticsearch >= v5
-if (x$es_ver() >= 500) {
+if (x$es_ver() >= 500 && x$es_ver() <= 700) {
 if (index_exists(x, "myindex")) index_delete(x, "myindex")
 
 body <- '{
@@ -234,6 +252,63 @@ query <- '{
 }'
 percolate_match(x, index = "myindex", body = query)
 } # end ES >= 5
+
+
+
+
+##### Elasticsearch >= v7
+if (x$es_ver() >= 700) {
+if (index_exists(x, "myindex")) index_delete(x, "myindex")
+
+body <- '{
+  "mappings": {
+    "properties": {
+      "message": {
+        "type": "text"
+      },
+      "query": {
+        "type": "percolator"
+      }
+    }
+  }
+}'
+
+# create the index with mapping
+index_create(x, "myindex", body = body)
+
+## register a percolator
+z <- '{
+  "query" : {
+     "match" : {
+       "message" : "bonsai tree"
+     }
+  }
+}'
+percolate_register(x, index = "myindex", id = 1, body = z)
+
+## register another
+x2 <- '{
+  "query" : {
+    "match" : {
+      "message" : "the office"
+    }
+  }
+}'
+percolate_register(x, index = "myindex", id = 2, body = x2)
+
+## match a document to a percolator
+query <- '{
+  "query" : {
+    "percolate" : {
+      "field": "query",
+      "document": {
+        "message": "A new bonsai tree in the office"
+      }
+    }
+  }
+}'
+percolate_match(x, index = "myindex", body = query)
+} # end ES >= 7
 
 
 }

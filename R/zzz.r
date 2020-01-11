@@ -8,6 +8,14 @@ as_log <- function(x){
   }
 }
 
+ck <- function(x){
+  if (is.null(x) || is.numeric(x)) {
+    x
+  } else if (is.logical(x)) {
+    as_log(x)
+  }
+}
+
 `%|||%` <- function(x, y) if (x == "false") y else x
 
 cl <- function(x) if (is.null(x)) NULL else paste0(x, collapse = ",")
@@ -58,14 +66,16 @@ construct_url <- function(url, path, index, type = NULL, id = NULL) {
   index <- esc(index)
   type <- esc(type)
   if (is.null(index) && is.null(type)) {
-    paste(url, path, sep = "/")
+    file.path(url, path)
   } else {
-    if (is.null(type) && !is.null(index)) {
-      paste(url, index, path, sep = "/")
+    if (is.null(type) && !is.null(index) && is.null(id)) {
+      file.path(url, index, path)
+    } else if (is.null(type) && !is.null(index) && !is.null(id)) {
+      file.path(url, index, path, id)
     } else if (!is.null(type) && !is.null(index) && is.null(id)) {
-      paste(url, index, type, path, sep = "/")
+      file.path(url, index, type, path)
     } else if (!is.null(type) && !is.null(index) && !is.null(id)) {
-      paste(url, index, type, id, path, sep = "/")
+      file.path(url, index, type, id, path)
     } else if (!is.null(type) && is.null(index) && !is.null(id)) {
       stop("If a document ID is given, an index type must be given", 
            call. = FALSE)

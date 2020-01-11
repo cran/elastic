@@ -4,8 +4,18 @@
 \alias{docs_bulk_delete}
 \title{Use the bulk API to delete documents}
 \usage{
-docs_bulk_delete(conn, x, index = NULL, type = NULL,
-  chunk_size = 1000, doc_ids = NULL, raw = FALSE, ...)
+docs_bulk_delete(
+  conn,
+  x,
+  index = NULL,
+  type = NULL,
+  chunk_size = 1000,
+  doc_ids = NULL,
+  raw = FALSE,
+  quiet = FALSE,
+  query = list(),
+  ...
+)
 }
 \arguments{
 \item{conn}{an Elasticsearch connection object, see \code{\link[=connect]{connect()}}}
@@ -15,8 +25,8 @@ docs_bulk_delete(conn, x, index = NULL, type = NULL,
 \item{index}{(character) The index name to use. Required for data.frame
 input, but optional for file inputs.}
 
-\item{type}{(character) The type name to use. If left as NULL, will be
-same name as index.}
+\item{type}{(character) The type. default: \code{NULL}. Note that \code{type} is
+deprecated in Elasticsearch v7 and greater, and removed in Elasticsearch v8}
 
 \item{chunk_size}{(integer) Size of each chunk. If your data.frame is smaller
 thank \code{chunk_size}, this parameter is essentially ignored. We write in
@@ -32,6 +42,13 @@ character. Default: not passed}
 
 \item{raw}{(logical) Get raw JSON back or not. If \code{TRUE}
 you get JSON; if \code{FALSE} you get a list. Default: \code{FALSE}}
+
+\item{quiet}{(logical) Suppress progress bar. Default: \code{FALSE}}
+
+\item{query}{(list) a named list of query parameters. optional.
+options include: pipeline, refresh, routing, _source, _source_excludes,
+_source_includes, timeout, wait_for_active_shards. See the docs bulk
+ES page for details}
 
 \item{...}{Pass on curl options to \link[crul:HttpClient]{crul::HttpClient}}
 }
@@ -50,25 +67,31 @@ x <- connect()
 if (index_exists(x, "foobar")) index_delete(x, "foobar")
 
 df <- data.frame(name = letters[1:3], size = 1:3, id = 100:102)
-invisible(docs_bulk(x, df, 'foobar', 'foobar', es_ids = FALSE))
+invisible(docs_bulk(x, df, 'foobar', es_ids = FALSE))
 Search(x, "foobar", asdf = TRUE)$hits$hits
 
 # delete using doc ids from the data.frame you used to create
-invisible(docs_bulk_delete(x, df, index = 'foobar', type = 'foobar'))
-Search(x, "foobar", asdf = TRUE)$hits$total
+invisible(docs_bulk_delete(x, df, index = 'foobar'))
+Search(x, "foobar", asdf = TRUE)$hits$total$value
 
 # delete by passing in doc ids
-docs_bulk_delete(x, df, index = 'foobar', type = 'foobar', doc_ids = df$id)
-Search(x, "foobar", asdf = TRUE)$hits$total
+## recreate data first
+if (index_exists(x, "foobar")) index_delete(x, "foobar")
+df <- data.frame(name = letters[1:3], size = 1:3, id = 100:102)
+invisible(docs_bulk(x, df, 'foobar', es_ids = FALSE))
+docs_bulk_delete(x, df, index = 'foobar', doc_ids = df$id)
+Search(x, "foobar", asdf = TRUE)$hits$total$value
 }
 }
 \references{
 \url{https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html}
 }
 \seealso{
-Other bulk-functions: \code{\link{docs_bulk_create}},
-  \code{\link{docs_bulk_index}},
-  \code{\link{docs_bulk_prep}},
-  \code{\link{docs_bulk_update}}, \code{\link{docs_bulk}}
+Other bulk-functions: 
+\code{\link{docs_bulk_create}()},
+\code{\link{docs_bulk_index}()},
+\code{\link{docs_bulk_prep}()},
+\code{\link{docs_bulk_update}()},
+\code{\link{docs_bulk}()}
 }
 \concept{bulk-functions}

@@ -4,15 +4,14 @@
 \alias{count}
 \title{Get counts of the number of records per index.}
 \usage{
-count(conn, index = NULL, type = NULL, callopts = list(),
-  verbose = TRUE, ...)
+count(conn, index = NULL, type = NULL, callopts = list(), verbose = TRUE, ...)
 }
 \arguments{
 \item{conn}{an Elasticsearch connection object, see \code{\link[=connect]{connect()}}}
 
 \item{index}{Index, defaults to all indices}
 
-\item{type}{Document type}
+\item{type}{Document type, optional}
 
 \item{callopts}{Curl args passed on to \link[crul:verb-GET]{crul::verb-GET}}
 
@@ -36,8 +35,9 @@ You can also get a count of documents using \code{\link[=Search]{Search()}} or
 (x <- connect())
 
 if (!index_exists(x, "plos")) {
-  plosdat <- system.file("examples", "plos_data.json", 
+  plosdat <- system.file("examples", "plos_data.json",
     package = "elastic")
+  plosdat <- type_remover(plosdat)
   invisible(docs_bulk(x, plosdat))
 }
 if (!index_exists(x, "shakespeare")) {
@@ -48,11 +48,6 @@ if (!index_exists(x, "shakespeare")) {
 
 count(x)
 count(x, index='plos')
-
-if (x$es_ver() < 700) {
-  count(x, index='plos', type='article')
-}
-
 count(x, index='shakespeare')
 count(x, index=c('plos','shakespeare'), q="a*")
 count(x, index=c('plos','shakespeare'), q="z*")

@@ -1,6 +1,6 @@
 context("indices")
 
-x <- connect()
+x <- connect(warn = FALSE)
 load_shakespeare(x)
 
 test_that("index_get", {
@@ -99,6 +99,13 @@ test_that("index_recovery", {
     expect_error(index_recovery(x, "adfadfafafasdfasdfasfasfasfd", verbose=FALSE), 
       "no such index||IndexMissingException")
   }
+})
+
+test_that("index_analyze", {
+  expect_warning(
+    index_analyze(x, text = 'this is a test', analyzer='standard'),
+    NA
+  )
 })
 
 ## cleanup -----------------------------------

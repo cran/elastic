@@ -4,14 +4,35 @@
 \alias{Search_uri}
 \title{Full text search of Elasticsearch with URI search}
 \usage{
-Search_uri(conn, index = NULL, type = NULL, q = NULL, df = NULL,
-  analyzer = NULL, default_operator = NULL, explain = NULL,
-  source = NULL, fields = NULL, sort = NULL, track_scores = NULL,
-  timeout = NULL, terminate_after = NULL, from = NULL, size = NULL,
-  search_type = NULL, lowercase_expanded_terms = NULL,
-  analyze_wildcard = NULL, version = NULL, lenient = FALSE,
-  raw = FALSE, asdf = FALSE, search_path = "_search",
-  stream_opts = list(), ...)
+Search_uri(
+  conn,
+  index = NULL,
+  type = NULL,
+  q = NULL,
+  df = NULL,
+  analyzer = NULL,
+  default_operator = NULL,
+  explain = NULL,
+  source = NULL,
+  fields = NULL,
+  sort = NULL,
+  track_scores = NULL,
+  timeout = NULL,
+  terminate_after = NULL,
+  from = NULL,
+  size = NULL,
+  search_type = NULL,
+  lowercase_expanded_terms = NULL,
+  analyze_wildcard = NULL,
+  version = NULL,
+  lenient = FALSE,
+  raw = FALSE,
+  asdf = FALSE,
+  track_total_hits = TRUE,
+  search_path = "_search",
+  stream_opts = list(),
+  ...
+)
 }
 \arguments{
 \item{conn}{an Elasticsearch connection object, see \code{\link{connect}}}
@@ -19,7 +40,8 @@ Search_uri(conn, index = NULL, type = NULL, q = NULL, df = NULL,
 \item{index}{Index name, one or more}
 
 \item{type}{Document type. Note that \code{type} is deprecated in
-Elasticsearch v7 and greater}
+Elasticsearch v7 and greater, and removed in Elasticsearch v8. We will
+strive to support types for folks using older ES versions}
 
 \item{q}{The query string (maps to the query_string query, see Query String
 Query for more details). See
@@ -94,7 +116,7 @@ analyzed or not. Default: \code{FALSE}.}
 
 \item{version}{(logical) Print the document version with each document.}
 
-\item{lenient}{If \code{TRUE} will cause format based failures (like
+\item{lenient}{(logical) If \code{TRUE} will cause format based failures (like
 providing text to a numeric field) to be ignored. Default: \code{FALSE}}
 
 \item{raw}{(logical) If \code{FALSE} (default), data is parsed to list.
@@ -104,8 +126,13 @@ If \code{TRUE}, then raw JSON returned}
 to parse JSON directly to a data.frame. If \code{FALSE} (Default), list
 output is given.}
 
+\item{track_total_hits}{(logical, numeric) If \code{TRUE} will always track
+the number of hits that match the query accurately. If \code{FALSE} will
+count documents accurately up to 10000 documents. If \code{is.integer} will
+count documents accurately up to the number. Default: \code{TRUE}}
+
 \item{search_path}{(character) The path to use for searching. Default
-to \code{_search}, but in some cases you may already have that in the base
+to \verb{_search}, but in some cases you may already have that in the base
 url set using \code{\link[=connect]{connect()}}, in which case you can set this
 to \code{NULL}}
 
@@ -127,9 +154,12 @@ Full text search of Elasticsearch with URI search
 
 # URI string queries
 Search_uri(x, index="shakespeare")
+## if you're using an older ES version, you may have types
+if (gsub("\\\\.", "", x$ping()$version$number) < 700) {
 Search_uri(x, index="shakespeare", type="act")
 Search_uri(x, index="shakespeare", type="scene")
 Search_uri(x, index="shakespeare", type="line")
+}
 
 ## Return certain fields
 if (gsub("\\\\.", "", ping()$version$number) < 500) {
@@ -141,66 +171,68 @@ if (gsub("\\\\.", "", ping()$version$number) < 500) {
 }
 
 ## Search many indices
-Search_uri(x, index = "gbif")$hits$total
-Search_uri(x, index = "shakespeare")$hits$total
-Search_uri(x, index = c("gbif", "shakespeare"))$hits$total
+Search_uri(x, index = "gbif")$hits$total$value
+Search_uri(x, index = "shakespeare")$hits$total$value
+Search_uri(x, index = c("gbif", "shakespeare"))$hits$total$value
 
 ## search_type
-## NOTE: If you're in ES V5 or greater, see \\code{?fielddata}
+## NOTE: If you're in ES V5 or greater, see \code{?fielddata}
 Search_uri(x, index="shakespeare", search_type = "query_then_fetch")
 Search_uri(x, index="shakespeare", search_type = "dfs_query_then_fetch")
 # Search_uri(x, index="shakespeare", search_type = "scan") # only when scrolling
 
 ## sorting
-Search_uri(x, index="shakespeare", type="act", sort="text_entry")
-Search_uri(x, index="shakespeare", type="act", sort="speaker:desc", fields='speaker')
-Search_uri(x, index="shakespeare", type="act",
- sort=c("speaker:desc","play_name:asc"), fields=c('speaker','play_name'))
+Search_uri(x, index="shakespeare", sort="text_entry")
+if (gsub("\\\\.", "", x$ping()$version$number) < 500) {
+  Search_uri(x, index="shakespeare", sort="speaker:desc", fields='speaker')
+  Search_uri(x, index="shakespeare", sort=c("speaker:desc","play_name:asc"),
+    fields=c('speaker','play_name'))
+}
 
-## paging
-Search_uri(x, index="shakespeare", size=1, fields='text_entry')$hits$hits
-Search_uri(x, index="shakespeare", size=1, from=1, fields='text_entry')$hits$hits
+## pagination
+Search_uri(x, index="shakespeare", size=1)$hits$hits
+Search_uri(x, index="shakespeare", size=1, from=1)$hits$hits
 
 ## queries
 ### Search in all fields
-Search_uri(x, index="shakespeare", type="act", q="york")
+Search_uri(x, index="shakespeare", q="york")
 
 ### Searchin specific fields
-Search_uri(x, index="shakespeare", type="act", q="speaker:KING HENRY IV")$hits$total
+Search_uri(x, index="shakespeare", q="speaker:KING HENRY IV")$hits$total$value
 
 ### Exact phrase search by wrapping in quotes
-Search_uri(x, index="shakespeare", type="act", q='speaker:"KING HENRY IV"')$hits$total
+Search_uri(x, index="shakespeare", q='speaker:"KING HENRY IV"')$hits$total$value
 
 ### can specify operators between multiple words parenthetically
-Search_uri(x, index="shakespeare", type="act", q="speaker:(HENRY OR ARCHBISHOP)")$hits$total
+Search_uri(x, index="shakespeare", q="speaker:(HENRY OR ARCHBISHOP)")$hits$total$value
 
 ### where the field line_number has no value (or is missing)
-Search_uri(x, index="shakespeare", q="_missing_:line_number")$hits$total
+Search_uri(x, index="shakespeare", q="_missing_:line_number")$hits$total$value
 
 ### where the field line_number has any non-null value
-Search_uri(x, index="shakespeare", q="_exists_:line_number")$hits$total
+Search_uri(x, index="shakespeare", q="_exists_:line_number")$hits$total$value
 
 ### wildcards, either * or ?
-Search_uri(x, index="shakespeare", q="*ay")$hits$total
-Search_uri(x, index="shakespeare", q="m?y")$hits$total
+Search_uri(x, index="shakespeare", q="*ay")$hits$total$value
+Search_uri(x, index="shakespeare", q="m?y")$hits$total$value
 
 ### regular expressions, wrapped in forward slashes
-Search_uri(x, index="shakespeare", q="text_entry:/[a-z]/")$hits$total
+Search_uri(x, index="shakespeare", q="text_entry:/[a-z]/")$hits$total$value
 
 ### fuzziness
-Search_uri(x, index="shakespeare", q="text_entry:ma~")$hits$total
-Search_uri(x, index="shakespeare", q="text_entry:the~2")$hits$total
-Search_uri(x, index="shakespeare", q="text_entry:the~1")$hits$total
+Search_uri(x, index="shakespeare", q="text_entry:ma~")$hits$total$value
+Search_uri(x, index="shakespeare", q="text_entry:the~2")$hits$total$value
+Search_uri(x, index="shakespeare", q="text_entry:the~1")$hits$total$value
 
 ### Proximity searches
-Search_uri(x, index="shakespeare", q='text_entry:"as hath"~5')$hits$total
-Search_uri(x, index="shakespeare", q='text_entry:"as hath"~10')$hits$total
+Search_uri(x, index="shakespeare", q='text_entry:"as hath"~5')$hits$total$value
+Search_uri(x, index="shakespeare", q='text_entry:"as hath"~10')$hits$total$value
 
 ### Ranges, here where line_id value is between 10 and 20
-Search_uri(x, index="shakespeare", q="line_id:[10 TO 20]")$hits$total
+Search_uri(x, index="shakespeare", q="line_id:[10 TO 20]")$hits$total$value
 
 ### Grouping
-Search_uri(x, index="shakespeare", q="(hath OR as) AND the")$hits$total
+Search_uri(x, index="shakespeare", q="(hath OR as) AND the")$hits$total$value
 
 # Limit number of hits returned with the size parameter
 Search_uri(x, index="shakespeare", size=1)
@@ -218,11 +250,11 @@ Search_uri(x, index="shakespeare", terminate_after=2)
 Search_uri(x, index="shakespeare", version=TRUE, size=2)
 
 ## Get raw data
-Search_uri(x, index="shakespeare", type="scene", raw=TRUE)
+Search_uri(x, index="shakespeare", raw=TRUE)
 
 ## Curl options
 ### verbose
-out <- Search_uri(x, index="shakespeare", type="line", verbose = TRUE)
+out <- Search_uri(x, index="shakespeare", verbose = TRUE)
 }
 }
 \seealso{

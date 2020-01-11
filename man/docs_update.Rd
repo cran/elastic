@@ -4,24 +4,40 @@
 \alias{docs_update}
 \title{Update a document}
 \usage{
-docs_update(conn, index, type, id, body, fields = NULL, source = NULL,
-  version = NULL, version_type = NULL, routing = NULL,
-  parent = NULL, timestamp = NULL, ttl = NULL, refresh = NULL,
-  timeout = NULL, retry_on_conflict = NULL,
-  wait_for_active_shards = NULL, detect_noop = NULL,
-  callopts = list(), ...)
+docs_update(
+  conn,
+  index,
+  id,
+  body,
+  type = NULL,
+  fields = NULL,
+  source = NULL,
+  version = NULL,
+  version_type = NULL,
+  routing = NULL,
+  parent = NULL,
+  timestamp = NULL,
+  ttl = NULL,
+  refresh = NULL,
+  timeout = NULL,
+  retry_on_conflict = NULL,
+  wait_for_active_shards = NULL,
+  detect_noop = NULL,
+  callopts = list(),
+  ...
+)
 }
 \arguments{
 \item{conn}{an Elasticsearch connection object, see \code{\link[=connect]{connect()}}}
 
 \item{index}{(character) The name of the index. Required}
 
-\item{type}{(character) The type of the document. Required}
-
 \item{id}{(numeric/character) The document ID. Can be numeric or character.
 Required}
 
 \item{body}{The document, either a list or json}
+
+\item{type}{(character) The type of the document. optional}
 
 \item{fields}{A comma-separated list of fields to return in the response}
 
@@ -76,27 +92,29 @@ Update a document
 \dontrun{
 (x <- connect())
 if (!index_exists(x, 'plos')) {
-  plosdat <- system.file("examples", "plos_data.json", package = "elastic")
+  plosdat <- system.file("examples", "plos_data.json",
+    package = "elastic")
+  plosdat <- type_remover(plosdat)
   invisible(docs_bulk(x, plosdat))
 }
 
-docs_create(x, index='plos', type='article', id=1002, 
+docs_create(x, index='plos', id=1002,
   body=list(id="12345", title="New title"))
 # and the document is there now
-docs_get(x, index='plos', type='article', id=1002) 
+docs_get(x, index='plos', id=1002)
 # update the document
-docs_update(x, index='plos', type='article', id=1002, 
+docs_update(x, index='plos', id=1002,
   body = list(doc = list(title = "Even newer title again")))
 # get it again, notice changes
-docs_get(x, index='plos', type='article', id=1002) 
+docs_get(x, index='plos', id=1002)
 
 if (!index_exists(x, 'stuffthings')) {
   index_create(x, "stuffthings")
 }
-docs_create(x, index='stuffthings', type='thing', id=1, 
+docs_create(x, index='stuffthings', id=1,
   body=list(name = "foo", what = "bar"))
-docs_update(x, index='stuffthings', type='thing', id=1, 
-  body = list(doc = list(name = "hello", what = "bar")), 
+docs_update(x, index='stuffthings', id=1,
+  body = list(doc = list(name = "hello", what = "bar")),
   source = 'name')
 }
 }

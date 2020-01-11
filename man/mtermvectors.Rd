@@ -4,12 +4,27 @@
 \alias{mtermvectors}
 \title{Multi Termvectors}
 \usage{
-mtermvectors(conn, index = NULL, type = NULL, ids = NULL,
-  body = list(), pretty = TRUE, field_statistics = TRUE,
-  fields = NULL, offsets = TRUE, parent = NULL, payloads = TRUE,
-  positions = TRUE, preference = "random", realtime = TRUE,
-  routing = NULL, term_statistics = FALSE, version = NULL,
-  version_type = NULL, ...)
+mtermvectors(
+  conn,
+  index = NULL,
+  type = NULL,
+  ids = NULL,
+  body = list(),
+  pretty = TRUE,
+  field_statistics = TRUE,
+  fields = NULL,
+  offsets = TRUE,
+  parent = NULL,
+  payloads = TRUE,
+  positions = TRUE,
+  preference = "random",
+  realtime = TRUE,
+  routing = NULL,
+  term_statistics = FALSE,
+  version = NULL,
+  version_type = NULL,
+  ...
+)
 }
 \arguments{
 \item{conn}{an Elasticsearch connection object, see \code{\link[=connect]{connect()}}}
@@ -71,74 +86,55 @@ index, type and id.
 \dontrun{
 x <- connect()
 
-if (!index_exists(x, 'omdb')) {
-  omdb <- system.file("examples", "omdb.json", package = "elastic")
-  docs_bulk(x, omdb)
-}
+if (index_exists(x, 'omdb')) index_delete(x, "omdb")
+omdb <- system.file("examples", "omdb.json", package = "elastic")
+omdb <- type_remover(omdb)
+invisible(docs_bulk(x, omdb))
+out <- Search(x, "omdb", size = 2)$hits$hits
+ids <- vapply(out, "[[", "", "_id")
 
-# no index or type given
+# no index
 body <- '{
    "docs": [
       {
          "_index": "omdb",
-         "_type": "omdb",
-         "_id": "AVXdx8Eqg_0Z_tpMDyP_",
+         "_id": "\%s",
          "term_statistics": true
       },
       {
          "_index": "omdb",
-         "_type": "omdb",
-         "_id": "AVXdx8Eqg_0Z_tpMDyQ1",
+         "_id": "\%s",
          "fields": [
             "Plot"
          ]
       }
    ]
 }'
-mtermvectors(x, body = body)
+mtermvectors(x, body = sprintf(body, ids[1], ids[2]))
 
-# index given, but not type
+# index given
 body <- '{
    "docs": [
       {
-         "_type": "omdb",
-         "_id": "AVXdx8Eqg_0Z_tpMDyP_",
+         "_id": "\%s",
          "fields": [
             "Plot"
          ],
          "term_statistics": true
       },
       {
-         "_type": "omdb",
-         "_id": "AVXdx8Eqg_0Z_tpMDyQ1",
+         "_id": "\%s",
          "fields": [
             "Title"
          ]
       }
    ]
 }'
-mtermvectors(x, 'omdb', body = body)
+mtermvectors(x, 'omdb', body = sprintf(body, ids[1], ids[2]))
 
-# index and type given
+# parameters same for both documents, so can simplify
 body <- '{
-   "docs": [
-      {
-         "_id": "AVXdx8Eqg_0Z_tpMDyP_",
-         "fields": [
-            "Plot"
-         ],
-         "term_statistics": true
-      },
-      {
-         "_id": "AVXdx8Eqg_0Z_tpMDyQ1"
-      }
-   ]
-}'
-mtermvectors(x, 'omdb', 'omdb', body = body)
-
-# index and type given, parameters same, so can simplify
-body <- '{
-    "ids" : ["AVXdx8Eqg_0Z_tpMDyP_", "AVXdx8Eqg_0Z_tpMDyQ1"],
+    "ids" : ["\%s", "\%s"],
     "parameters": {
         "fields": [
             "Plot"
@@ -146,7 +142,7 @@ body <- '{
         "term_statistics": true
     }
 }'
-mtermvectors(x, 'omdb', 'omdb', body = body)
+mtermvectors(x, 'omdb', body = sprintf(body, ids[1], ids[2]))
 
 # you can give user provided documents via the 'docs' parameter
 ## though you have to give index and type that exist in your Elasticsearch 
@@ -155,7 +151,6 @@ body <- '{
    "docs": [
       {
          "_index": "omdb",
-         "_type": "omdb",
          "doc" : {
             "Director" : "John Doe",
             "Plot" : "twitter test test test"
@@ -163,7 +158,6 @@ body <- '{
       },
       {
          "_index": "omdb",
-         "_type": "omdb",
          "doc" : {
            "Director" : "Jane Doe",
            "Plot" : "Another twitter test ..."

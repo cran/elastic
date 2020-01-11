@@ -20,28 +20,48 @@
 \alias{index_analyze}
 \alias{index_flush}
 \alias{index_clear_cache}
+\alias{index_shrink}
 \title{Index API operations}
 \usage{
-index_get(conn, index = NULL, features = NULL, raw = FALSE,
-  verbose = TRUE, ...)
+index_get(
+  conn,
+  index = NULL,
+  features = NULL,
+  raw = FALSE,
+  verbose = TRUE,
+  ...
+)
 
 index_exists(conn, index, ...)
 
 index_delete(conn, index, raw = FALSE, verbose = TRUE, ...)
 
-index_create(conn, index = NULL, body = NULL, raw = FALSE,
-  verbose = TRUE, ...)
+index_create(conn, index = NULL, body = NULL, raw = FALSE, verbose = TRUE, ...)
 
-index_recreate(conn, index = NULL, body = NULL, raw = FALSE,
-  verbose = TRUE, ...)
+index_recreate(
+  conn,
+  index = NULL,
+  body = NULL,
+  raw = FALSE,
+  verbose = TRUE,
+  ...
+)
 
 index_close(conn, index, ...)
 
 index_open(conn, index, ...)
 
-index_stats(conn, index = NULL, metric = NULL,
-  completion_fields = NULL, fielddata_fields = NULL, fields = NULL,
-  groups = NULL, level = "indices", ...)
+index_stats(
+  conn,
+  index = NULL,
+  metric = NULL,
+  completion_fields = NULL,
+  fielddata_fields = NULL,
+  fields = NULL,
+  groups = NULL,
+  level = "indices",
+  ...
+)
 
 index_settings(conn, index = "_all", ...)
 
@@ -49,28 +69,63 @@ index_settings_update(conn, index = NULL, body, ...)
 
 index_segments(conn, index = NULL, ...)
 
-index_recovery(conn, index = NULL, detailed = FALSE,
-  active_only = FALSE, ...)
+index_recovery(conn, index = NULL, detailed = FALSE, active_only = FALSE, ...)
 
-index_optimize(conn, index = NULL, max_num_segments = NULL,
-  only_expunge_deletes = FALSE, flush = TRUE, wait_for_merge = TRUE,
-  ...)
+index_optimize(
+  conn,
+  index = NULL,
+  max_num_segments = NULL,
+  only_expunge_deletes = FALSE,
+  flush = TRUE,
+  wait_for_merge = TRUE,
+  ...
+)
 
-index_forcemerge(conn, index = NULL, max_num_segments = NULL,
-  only_expunge_deletes = FALSE, flush = TRUE, ...)
+index_forcemerge(
+  conn,
+  index = NULL,
+  max_num_segments = NULL,
+  only_expunge_deletes = FALSE,
+  flush = TRUE,
+  ...
+)
 
 index_upgrade(conn, index = NULL, wait_for_completion = FALSE, ...)
 
-index_analyze(conn, text = NULL, field = NULL, index = NULL,
-  analyzer = NULL, tokenizer = NULL, filters = NULL,
-  char_filters = NULL, body = list(), ...)
+index_analyze(
+  conn,
+  text = NULL,
+  field = NULL,
+  index = NULL,
+  analyzer = NULL,
+  tokenizer = NULL,
+  filters = NULL,
+  char_filters = NULL,
+  body = list(),
+  ...
+)
 
-index_flush(conn, index = NULL, force = FALSE, full = FALSE,
-  wait_if_ongoing = FALSE, ...)
+index_flush(
+  conn,
+  index = NULL,
+  force = FALSE,
+  full = FALSE,
+  wait_if_ongoing = FALSE,
+  ...
+)
 
-index_clear_cache(conn, index = NULL, filter = FALSE,
-  filter_keys = NULL, fielddata = FALSE, query_cache = FALSE,
-  id_cache = FALSE, ...)
+index_clear_cache(
+  conn,
+  index = NULL,
+  filter = FALSE,
+  filter_keys = NULL,
+  fielddata = FALSE,
+  query_cache = FALSE,
+  id_cache = FALSE,
+  ...
+)
+
+index_shrink(conn, index, index_new, body = NULL, ...)
 }
 \arguments{
 \item{conn}{an Elasticsearch connection object, see \code{\link[=connect]{connect()}}}
@@ -158,6 +213,9 @@ parameter (default: all)}
 \item{query_cache}{(logical) Clear query caches}
 
 \item{id_cache}{(logical) Clear ID caches for parent/child}
+
+\item{index_new}{(character) an index name, required. only applies to
+index_shrink method}
 }
 \description{
 Index API operations
@@ -254,10 +312,8 @@ body <- '{
 ## with mappings
 body <- '{
  "mappings": {
-   "record": {
-     "properties": {
-       "location" : {"type" : "geo_point"}
-      }
+   "properties": {
+     "location" : {"type" : "geo_point"}
    }
  }
 }'
@@ -381,6 +437,20 @@ index_create(x, "foobar")
 settings <- list(index = list(number_of_replicas = 4))
 index_settings_update(x, "foobar", body = settings)
 index_get(x, "foobar")$foobar$settings
+
+# Shrink index - Can only shrink an index if it has >1 shard
+## index must be read only, a copy of every shard in the index must
+## reside on the same node, and the cluster health status must be green
+### index_settings_update call to change these
+settings <- list(
+  index.routing.allocation.require._name = "shrink_node_name",
+  index.blocks.write = "true"
+)
+if (index_exists(x, 'barbarbar')) index_delete(x, 'barbarbar')
+index_create(x, "barbarbar")
+index_settings_update(x, "barbarbar", body = settings)
+cat_recovery(x, index='barbarbar')
+# index_shrink(x, "barbarbar", "barfoobbar")
 }
 }
 \references{

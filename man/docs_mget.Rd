@@ -4,10 +4,20 @@
 \alias{docs_mget}
 \title{Get multiple documents via the multiple get API}
 \usage{
-docs_mget(conn, index = NULL, type = NULL, ids = NULL,
-  type_id = NULL, index_type_id = NULL, source = NULL,
-  fields = NULL, raw = FALSE, callopts = list(), verbose = TRUE,
-  ...)
+docs_mget(
+  conn,
+  index = NULL,
+  type = NULL,
+  ids = NULL,
+  type_id = NULL,
+  index_type_id = NULL,
+  source = NULL,
+  fields = NULL,
+  raw = FALSE,
+  callopts = list(),
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{conn}{an Elasticsearch connection object, see \code{\link[=connect]{connect()}}}
@@ -56,37 +66,39 @@ multiple documents from different indexes and different types.
 (x <- connect())
 
 if (!index_exists(x, 'plos')) {
-  plosdat <- system.file("examples", "plos_data.json", package = "elastic")
+  plosdat <- system.file("examples", "plos_data.json",
+    package = "elastic")
+  plosdat <- type_remover(plosdat)
   invisible(docs_bulk(x, plosdat))
 }
 
-# Same index and type
-docs_mget(x, index="plos", type="article", ids=c(9,10))
+# same index, many ids
+docs_mget(x, index="plos", ids=c(9,10))
 
-tmp <- docs_mget(x, index="plos", type="article", ids=c(9, 10), 
-  raw=TRUE)
+# Same index and type
+docs_mget(x, index="plos", type="_doc", ids=c(9,10))
+
+tmp <- docs_mget(x, index="plos", ids=c(9, 10), raw=TRUE)
 es_parse(tmp)
-docs_mget(x, index="plos", type="article", ids=c(9, 10), 
-  source='title')
-docs_mget(x, index="plos", type="article", ids=c(14, 19), 
-  source=TRUE)
+docs_mget(x, index="plos", ids=c(9, 10), source='title')
+docs_mget(x, index="plos", ids=c(14, 19), source=TRUE)
 
 # curl options
-docs_mget(x, index="plos", type="article", ids=1:2, callopts=list(verbose=TRUE))
+docs_mget(x, index="plos", ids=1:2, callopts=list(verbose=TRUE))
 
 # Same index, but different types
-if (!index_exists(x, 'shakespeare')) {
-  shakedat <- system.file("examples", "shakespeare_data.json", package = "elastic")
-  invisible(docs_bulk(x, shakedat))
-}
+if (index_exists(x, 'shakespeare')) index_delete(x, 'shakespeare')
+shakedat <- system.file("examples", "shakespeare_data.json",
+  package = "elastic")
+invisible(docs_bulk(x, shakedat))
 
 docs_mget(x, index="shakespeare", type_id=list(c("scene",1), c("line",20)))
-docs_mget(x, index="shakespeare", type_id=list(c("scene",1), c("line",20)), 
+docs_mget(x, index="shakespeare", type_id=list(c("scene",1), c("line",20)),
   source='play_name')
 
 # Different indices and different types pass in separately
 docs_mget(x, index_type_id = list(
-  c("shakespeare", "line", 20), 
+  c("shakespeare", "line", 20),
   c("plos", "article", 1)
  )
 )
