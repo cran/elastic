@@ -1,6 +1,6 @@
 context("ingest/pipeline")
 
-x <- connect()
+x <- connect(port = Sys.getenv("TEST_ES_PORT"))
 
 body1 <- '{
   "description" : "do a thing",
@@ -116,6 +116,6 @@ test_that("pipeline fxns error well", {
 })
 
 ## cleanup -----------------------------------
-if (!es_version(x) < 502) {
-  invisible(pipeline_delete(x, "*"))
-}
+# if (!es_version(x) < 502) {
+#   invisible(pipeline_delete(x, "*"))
+# }

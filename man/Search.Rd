@@ -25,7 +25,7 @@ Search(
   lowercase_expanded_terms = NULL,
   analyze_wildcard = NULL,
   version = NULL,
-  lenient = FALSE,
+  lenient = NULL,
   body = list(),
   raw = FALSE,
   asdf = FALSE,
@@ -33,6 +33,7 @@ Search(
   time_scroll = NULL,
   search_path = "_search",
   stream_opts = list(),
+  ignore_unavailable = FALSE,
   ...
 )
 }
@@ -107,7 +108,7 @@ you can change this default maximum by changing the
 \item{search_type}{(character) The type of the search operation to perform.
 Can be \code{query_then_fetch} (default) or \code{dfs_query_then_fetch}.
 Types \code{scan} and \code{count} are deprecated.
-See \url{http://bit.ly/19Am9xP} for more details on the different types of
+See Elasticsearch docs for more details on the different types of
 search that can be performed.}
 
 \item{lowercase_expanded_terms}{(logical) Should terms be automatically
@@ -119,7 +120,7 @@ analyzed or not. Default: \code{FALSE}.}
 \item{version}{(logical) Print the document version with each document.}
 
 \item{lenient}{(logical) If \code{TRUE} will cause format based failures (like
-providing text to a numeric field) to be ignored. Default: \code{FALSE}}
+providing text to a numeric field) to be ignored. Default: \code{NULL}}
 
 \item{body}{Query, either a list or json.}
 
@@ -149,6 +150,9 @@ to \code{NULL}}
 that's the data that's streamed out, and pass a file path instead of a
 connection to \code{con}. \code{pagesize} param doesn't do much as
 that's more or less controlled by paging with ES.}
+
+\item{ignore_unavailable}{(logical) What to do if an specified index name
+doesn't exist. If set to \code{TRUE} then those indices are ignored.}
 
 \item{...}{Curl args passed on to \code{\link[crul]{verb-POST}}}
 }

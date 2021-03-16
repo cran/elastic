@@ -20,8 +20,9 @@ Search <- function(conn, index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL,
   default_operator=NULL, explain=NULL, source=NULL, fields=NULL, sort=NULL, 
   track_scores=NULL, timeout=NULL, terminate_after=NULL, from=NULL, size=NULL, 
   search_type=NULL, lowercase_expanded_terms=NULL, analyze_wildcard=NULL, 
-  version=NULL, lenient=FALSE, body=list(), raw=FALSE, asdf=FALSE, track_total_hits = TRUE,
-  time_scroll=NULL, search_path="_search", stream_opts=list(), ...) {
+  version=NULL, lenient=NULL, body=list(), raw=FALSE, asdf=FALSE,
+  track_total_hits = TRUE, time_scroll=NULL, search_path="_search",
+  stream_opts=list(), ignore_unavailable = FALSE, ...) {
 
   is_conn(conn)
   tmp <- search_POST(conn, search_path, cl(index), cl(type),
@@ -33,7 +34,9 @@ Search <- function(conn, index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NULL,
       search_type = search_type, 
       lowercase_expanded_terms = lowercase_expanded_terms, 
       analyze_wildcard = analyze_wildcard, version = as_log(version), q = q, 
-      scroll = time_scroll, lenient = as_log(lenient), track_total_hits = ck(track_total_hits))), body, raw, asdf,
+      ignore_unavailable = as_log(ignore_unavailable),
+      scroll = time_scroll, lenient = as_log(lenient),
+      track_total_hits = ck(track_total_hits))), body, raw, asdf,
     stream_opts, ...)
   if (!is.null(time_scroll)) attr(tmp, "scroll") <- time_scroll
   return(tmp)
@@ -52,14 +55,16 @@ search_POST <- function(conn, path, index=NULL, type=NULL, args, body, raw,
   url <- construct_url(url, path, index, type)
   url <- prune_trailing_slash(url)
   body <- check_inputs(body)
-  # track_total_hits introduced in ES >= 7.0
-  if (conn$es_ver() < 700) args$track_total_hits <- NULL
-  # in ES >= v5, lenient param droppped
-  if (conn$es_ver() >= 500) args$lenient <- NULL
-  # in ES >= v5, fields param changed to stored_fields
-  if (conn$es_ver() >= 500) {
-    if ("fields" %in% names(args)) {
-      stop('"fields" parameter is deprecated in ES >= v5. Use "_source" in body\nSee also "fields" parameter in ?Search', call. = FALSE)
+  if (!conn$ignore_version) {
+    # track_total_hits introduced in ES >= 7.0
+    if (conn$es_ver() < 700) args$track_total_hits <- NULL
+    # in ES >= v5, lenient param droppped
+    if (conn$es_ver() >= 500) args$lenient <- NULL
+    # in ES >= v5, fields param changed to stored_fields
+    if (conn$es_ver() >= 500) {
+      if ("fields" %in% names(args)) {
+        stop('"fields" parameter is deprecated in ES >= v5. Use "_source" in body\nSee also "fields" parameter in ?Search', call. = FALSE)
+      }
     }
   }
   cli <- crul::HttpClient$new(url = url,

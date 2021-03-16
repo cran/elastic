@@ -1,14 +1,29 @@
 context("connect")
 
 test_that("connection works", {
-  x <- connect()
+  x <- connect(port = Sys.getenv("TEST_ES_PORT"))
   expect_is(x, "Elasticsearch")
-  expect_equal(x$port, 9200)
+  expect_equal(x$port, Sys.getenv("TEST_ES_PORT"))
+})
+
+test_that("ignore_version works as expected", {
+  x <- connect(port = Sys.getenv("TEST_ES_PORT"), ignore_version=TRUE)
+  expect_true(x$ignore_version)
+
+  # ping skips the http request and returns message, returns NULL
+  expect_message((z=x$ping()), "is set to TRUE")
+  expect_null(z)
+
+  # stop_es_version is skipped, returns NULL
+  expect_null((z=x$stop_es_version(110, "cat_aliases")))
+
+  # es_ver doesn't work
+  expect_error(suppressMessages(x$es_ver()))
 })
 
 test_that("errors choice doesn't affect other client connections", {
-  a <- connect(errors = "simple")
-  b <- connect(errors = "complete")
+  a <- connect(port = Sys.getenv("TEST_ES_PORT"), errors = "simple")
+  b <- connect(port = Sys.getenv("TEST_ES_PORT"), errors = "complete")
 
   expect_is(a, "Elasticsearch")
   expect_is(b, "Elasticsearch")

@@ -1,6 +1,6 @@
 context("Search_template")
 
-x <- connect(warn = FALSE)
+x <- connect(port = Sys.getenv("TEST_ES_PORT"), warn = FALSE)
 load_shakespeare(x)
 
 body1 <- '{
@@ -124,7 +124,10 @@ test_that("Search_template validate (aka, render) works", {
 test_that("search_template fails as expected", {
   if (x$es_ver() < 200) skip('feature not in this ES version')
   
-  if (x$es_ver() >= 500) {
+  if (x$es_ver() >= 770) {
+    expect_error(Search_template(x, index = "shakespeare", body = list(a = 5)),
+                 "\\[search_template\\] unknown field \\[a\\]")
+  } else if (x$es_ver() >= 500) {
     expect_error(Search_template(x, index = "shakespeare", body = list(a = 5)),
                  "\\[search_template\\] unknown field \\[a\\], parser not found")
   } else {

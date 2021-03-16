@@ -14,8 +14,8 @@ Search_uri <- function(conn, index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NU
   default_operator=NULL, explain=NULL, source=NULL, fields=NULL, sort=NULL,
   track_scores=NULL, timeout=NULL, terminate_after=NULL, from=NULL, size=NULL,
   search_type=NULL, lowercase_expanded_terms=NULL, analyze_wildcard=NULL,
-  version=NULL, lenient=FALSE, raw=FALSE, asdf=FALSE, track_total_hits = TRUE,
-  search_path="_search", stream_opts=list(), ...) {
+  version=NULL, lenient=NULL, raw=FALSE, asdf=FALSE, track_total_hits = TRUE,
+  search_path="_search", stream_opts=list(), ignore_unavailable = FALSE, ...) {
 
   is_conn(conn)
   search_GET(conn, search_path, cl(index), type,
@@ -27,6 +27,7 @@ Search_uri <- function(conn, index=NULL, type=NULL, q=NULL, df=NULL, analyzer=NU
       search_type = search_type,
       lowercase_expanded_terms = lowercase_expanded_terms,
       analyze_wildcard = analyze_wildcard, version = as_log(version), q = q,
+      ignore_unavailable = as_log(ignore_unavailable),
       lenient = as_log(lenient), track_total_hits = ck(track_total_hits))), raw, asdf, stream_opts, ...)
 }
 
@@ -35,16 +36,18 @@ search_GET <- function(conn, path, index=NULL, type=NULL, args, raw, asdf,
   url <- conn$make_url()
   url <- construct_url(url, path, index, type)
   url <- prune_trailing_slash(url)
-  # track_total_hits introduced in ES >= 7.0
-  if (conn$es_ver() < 700) args$track_total_hits <- NULL
-  # in ES >= v5, lenient param droppped
-  if (conn$es_ver() >= 500) args$lenient <- NULL
-  # in ES >= v5, fields param changed to stored_fields
-  if (conn$es_ver() >= 500) {
-    if ("fields" %in% names(args)) {
-      stop(
-        '"fields" parameter is deprecated in ES >= v5. See help in ?Search_uri', 
-        call. = FALSE)
+  if (!conn$ignore_version) {
+    # track_total_hits introduced in ES >= 7.0
+    if (conn$es_ver() < 700) args$track_total_hits <- NULL
+    # in ES >= v5, lenient param droppped
+    if (conn$es_ver() >= 500) args$lenient <- NULL
+    # in ES >= v5, fields param changed to stored_fields
+    if (conn$es_ver() >= 500) {
+      if ("fields" %in% names(args)) {
+        stop(
+          '"fields" parameter is deprecated in ES >= v5. See help in ?Search_uri', 
+          call. = FALSE)
+      }
     }
   }
   cli <- crul::HttpClient$new(url = url,

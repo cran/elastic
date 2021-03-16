@@ -1,7 +1,7 @@
 context("search")
 
-x <- connect(warn = FALSE)
-z <- connect(warn = TRUE)
+x <- connect(port = Sys.getenv("TEST_ES_PORT"), warn = FALSE)
+z <- connect(port = Sys.getenv("TEST_ES_PORT"), warn = TRUE)
 load_shakespeare(x)
 load_shakespeare(z)
 Sys.sleep(2) # wait for data to be available
@@ -147,9 +147,11 @@ test_that("Search fails as expected", {
 
   aggs <- list(aggs = list(stats = list(stfff = list(field = "text_entry"))))
   if (gsub("\\.", "", x$ping()$version$number) >= 500) {
-    if (gsub("\\.", "", x$ping()$version$number) >= 630) {
+    if (gsub("\\.", "", x$ping()$version$number) >= 770) {
       expect_error(Search(x, index = "shakespeare", body = aggs), 
-                   "unable to parse BaseAggregationBuilder with name \\[stfff\\]: parser not found")
+                   "known")
+    } else if (gsub("\\.", "", x$ping()$version$number) >= 630) {
+      expect_error(Search(x, index = "shakespeare", body = aggs))
     } else if (gsub("\\.", "", x$ping()$version$number) >= 530) {
       expect_error(Search(x, index = "shakespeare", body = aggs), 
                    "Unknown BaseAggregationBuilder \\[stfff\\]")

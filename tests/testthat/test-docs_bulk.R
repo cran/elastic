@@ -1,6 +1,6 @@
 context("docs_bulk")
 
-x <- connect(warn = FALSE)
+x <- connect(port = Sys.getenv("TEST_ES_PORT"), warn = FALSE)
 
 test_that("docs_bulk - works with bulk format file", {
   # remove index if it exists
@@ -58,7 +58,7 @@ test_that("docs_bulk - works with data.frame where ids are factors", {
     a <- docs_bulk(x, df, index = "hello2", quiet = TRUE)
   }
 
-  expect_is(df$id, "factor")
+  expect_is(df$id, "character")
   expect_is(a, "list")
   expect_equal(length(a), 1)
   expect_named(a[[1]], c('took', 'errors', 'items'))
@@ -241,6 +241,8 @@ test_that("docs_bulk: suppressing progress bar works", {
 
 
 test_that("docs_bulk: pipline attachments work", {
+  skip_on_ci() # would need an ES plugin
+
   body <- '{
     "description" : "Extract attachment information",
     "processors" : [
@@ -273,13 +275,24 @@ test_that("docs_bulk: pipline attachments work", {
     list(data = "aGVsbG8gd29ybGQgaGVsbG8gd29ybGQ=",
          category = "hello world")
   )
-  invisible(docs_bulk(x, docs, index = "myindex", doc_ids = 1:2, es_ids = FALSE,
-    quiet = TRUE, query = list(pipeline = 'attachment')))
+  if (x$es_ver() < 700) {
+    invisible(docs_bulk(x, docs, index = "myindex", type = "myindex",
+      doc_ids = 1:2, es_ids = FALSE, quiet = TRUE,
+      query = list(pipeline = 'attachment')))
+  } else {
+    invisible(docs_bulk(x, docs, index = "myindex", doc_ids = 1:2,
+      es_ids = FALSE, quiet = TRUE,
+      query = list(pipeline = 'attachment')))
+  }
   Sys.sleep(1)
   docs <- Search(x, "myindex")
   doc1 <- docs$hits$hits[[1]]$`_source`
   expect_equal(sort(names(doc1)), c("category", "fulltext"))
   expect_equal(sort(names(doc1$fulltext)),
     c("content", "content_length", "content_type", "language"))
-  expect_equal(doc1$fulltext$content_type, "application/rtf")
+  expect_true(
+    grepl(if (x$es_ver() < 700) "text/plain" else "application/rtf", 
+      doc1$fulltext$content_type
+    )
+  )
 })
